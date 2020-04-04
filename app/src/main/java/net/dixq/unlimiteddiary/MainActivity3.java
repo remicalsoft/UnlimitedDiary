@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.ListView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
@@ -20,7 +21,7 @@ import com.google.api.services.drive.model.FileList;
 import net.dixq.unlimiteddiary.utils.Lg;
 import net.dixq.unlimiteddiary.utils.StopWatch;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -107,6 +108,7 @@ public class MainActivity3 extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                _fileList.clear();
                 {
                     try {
                         Drive.Files.List request = _driveService.files().list().setQ("'" + folderID + "' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false");
@@ -128,6 +130,28 @@ public class MainActivity3 extends AppCompatActivity {
                         e.printStackTrace();
                     }
                     Lg.e("time:"+sw.getDiff());
+
+                    ArrayList<DiaryData> list = new ArrayList<>();
+                    DiaryData dat = new DiaryData(true, 2020, 4);
+                    list.add(dat);
+                    for(File file : _fileList){
+                        try {
+                            InputStream im = _driveService.files().get(file.getId()).executeMediaAsInputStream();
+                            Reader reader = new InputStreamReader(im, "utf-8");
+                            BufferedReader bufferedReader = new BufferedReader(reader);
+                            String[] split = file.getName().split("\\.");
+                            dat = new DiaryData(false, Integer.parseInt(split[2]), bufferedReader.readLine());
+                            dat._year = Integer.parseInt(split[0]);
+                            dat._month = Integer.parseInt(split[1]);
+                            dat._day = Integer.parseInt(split[2]);
+                            dat._hour = Integer.parseInt(split[3]);
+                            dat._min = Integer.parseInt(split[4]);
+                            list.add(dat);
+                        } catch (IOException e) { }
+                    }
+                    ItemAdapter adapter = new ItemAdapter(MainActivity3.this, list);
+                    ListView listView = findViewById(R.id.list);
+                    _handler.post(()-> listView.setAdapter(adapter));
                 }
             }
         })).start();

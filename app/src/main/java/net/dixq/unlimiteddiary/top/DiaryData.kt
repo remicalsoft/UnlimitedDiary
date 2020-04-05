@@ -1,11 +1,8 @@
 package net.dixq.unlimiteddiary.top
 
-import android.os.Parcelable
-import kotlinx.android.parcel.Parcelize
 import java.util.*
 
-@Parcelize
-data class DiaryData(val isMonthLine: Boolean) : Parcelable {
+class DiaryData(val isMonthLine: Boolean){
     var year: Int = 0
     var month: Int = 0
     var day: Int = 0
@@ -15,16 +12,17 @@ data class DiaryData(val isMonthLine: Boolean) : Parcelable {
     var revision: Int = 0
     var title: String = ""
     var body: String = ""
-
     constructor(isMonthLine: Boolean, year:Int, month:Int) : this(isMonthLine) {
         this.year = year
         this.month = month
     }
-
+    constructor(isMonthLine: Boolean, title:String, body:String) : this(isMonthLine){
+        this.title = title
+        this.body = body
+    }
     fun equalAsMonth(dat: DiaryData): Boolean {
         return dat.year == year && dat.month == month
     }
-
     fun setNowTime(){
         val cl: Calendar = Calendar.getInstance()
         year  = cl.get(Calendar.YEAR)
@@ -33,9 +31,4 @@ data class DiaryData(val isMonthLine: Boolean) : Parcelable {
         hour = cl.get(Calendar.HOUR)
         min = cl.get(Calendar.MINUTE)
     }
-
-    companion object {
-        public val TAG = "DiaryDate"
-    }
-
 }

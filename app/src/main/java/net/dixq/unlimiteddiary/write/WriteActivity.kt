@@ -47,14 +47,14 @@ class WriteActivity : AppCompatActivity(), View.OnClickListener {
             OkDialog(this, "何も入力されていません。", null).show()
             return
         }
-        var dat  = DiaryData(false)
-        dat.setNowTime()
-        dat.title = findViewById<TextInputEditText>(R.id.edt_title).text.toString()
-        dat.body = findViewById<TextInputEditText>(R.id.edt_body).text.toString()
         val intent = Intent()
-        intent.putExtra(DiaryData.TAG, dat)
+        intent.putExtra(TAG_TITLE, findViewById<TextInputEditText>(R.id.edt_title).text.toString())
+        intent.putExtra(TAG_BODY,  findViewById<TextInputEditText>(R.id.edt_body) .text.toString())
         setResult(RESULT_OK, intent)
         finish()
     }
-
+    companion object {
+        public val TAG_TITLE = "tag_title"
+        public val TAG_BODY = "tag_body";
+    }
 }

@@ -42,8 +42,10 @@ class TopActivity : AppCompatActivity() {
         when(requestCode){
             REQUEST_WRITE->{
                 if(resultCode == Activity.RESULT_OK) {
-                    val diaryDat = data!!.getParcelableExtra<DiaryData>(DiaryData.TAG)
-                    _list.add(diaryDat)
+                    val title = data!!.getStringExtra(WriteActivity.TAG_TITLE)
+                    val body  = data.getStringExtra(WriteActivity.TAG_BODY)
+                    val diaryDat = DiaryData(false, title, body)
+                    diaryDat.setNowTime()
                     insertTopOfList(diaryDat)
                     val adapter = ItemAdapter(this@TopActivity, _list)
                     val listView = findViewById<ListView>(R.id.list)

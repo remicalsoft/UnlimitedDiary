@@ -1,4 +1,4 @@
-package net.dixq.unlimiteddiary;
+package net.dixq.unlimiteddiary.top;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+import net.dixq.unlimiteddiary.R;
 import net.dixq.unlimiteddiary.utils.CalendarUtils;
 
 import java.util.List;
@@ -37,17 +38,17 @@ public class ItemAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        if(_list.get(position)._isShowDay) {
+        if(_list.get(position).isDayCell()) {
             convertView = _inflater.inflate(R.layout.row_month, parent, false);
-            ((TextView)convertView.findViewById(R.id.txt_month)).setText(_list.get(position)._year+"/"+_list.get(position)._month);
+            ((TextView)convertView.findViewById(R.id.txt_month)).setText(_list.get(position).getYear() +"/"+ _list.get(position).getMonth());
         } else {
             DiaryData dat = _list.get(position);
-            String dayOfWeek = "("+ CalendarUtils.getDatOfWeek(dat._year, dat._month-1, dat._day) +")";
+            String dayOfWeek = "("+ CalendarUtils.getDatOfWeek(dat.getYear(), dat.getMonth() -1, dat.getDay()) +")";
             convertView = _inflater.inflate(R.layout.row_diary, parent, false);
             TextView textView = (TextView)convertView.findViewById(R.id.txt_day);
-            textView.setText(String.valueOf(dat._day));
+            textView.setText(String.valueOf(dat.getDay()));
             ((TextView)convertView.findViewById(R.id.txt_dayofweek)).setText(dayOfWeek);
-            ((TextView)convertView.findViewById(R.id.txt_body)).setText(dat._body);
+            ((TextView)convertView.findViewById(R.id.txt_body)).setText(dat.getBody());
         }
         return convertView;
     }

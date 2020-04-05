@@ -38,8 +38,8 @@ public class ItemAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        if(_list.get(position).isDayCell()) {
-            convertView = _inflater.inflate(R.layout.row_month, parent, false);
+        if(_list.get(position).isMonthLine()) {
+            convertView = _inflater.inflate(R.layout.row_month_line, parent, false);
             ((TextView)convertView.findViewById(R.id.txt_month)).setText(_list.get(position).getYear() +"/"+ _list.get(position).getMonth());
         } else {
             DiaryData dat = _list.get(position);

@@ -28,7 +28,16 @@ class DiaryData(val isMonthLine: Boolean){
         year  = cl.get(Calendar.YEAR)
         month = cl.get(Calendar.MONTH)+1
         day = cl.get(Calendar.DATE)
-        hour = cl.get(Calendar.HOUR)
+        hour = cl.get(Calendar.HOUR_OF_DAY)
         min = cl.get(Calendar.MINUTE)
+    }
+    fun getConvinedString():String{
+        if(title.isEmpty()){
+            return body
+        }
+        return "<title>$title</title>\n$body"
+    }
+    fun getFileName(): String {
+        return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.txt", year, month, day, hour, min, count, revision)
     }
 }

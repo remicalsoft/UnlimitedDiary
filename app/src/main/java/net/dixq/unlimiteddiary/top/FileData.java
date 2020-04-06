@@ -1,7 +1,7 @@
 package net.dixq.unlimiteddiary.top;
 
 import com.google.api.services.drive.model.File;
-import net.dixq.unlimiteddiary.drive.DriveProcessor;
+import net.dixq.unlimiteddiary.drive.DriveHelper;
 
 import java.io.*;
 
@@ -24,14 +24,14 @@ public class FileData {
         return dat;
     }
 
-    static DiaryData readBody(DriveProcessor processor, String fileId, DiaryData dat) throws IOException {
+    static DiaryData readBody(DriveHelper processor, String fileId, DiaryData dat) throws IOException {
         String content = processor.getContent(fileId);
         int index = content.indexOf("</title>");
         if(index==-1){
             dat.setBody(content);
             return dat;
         }
-        dat.setTitle(content.substring(7, index - 1));
+        dat.setTitle(content.substring(7, index));
         dat.setBody(content.substring(index + 8));
         return dat;
     }

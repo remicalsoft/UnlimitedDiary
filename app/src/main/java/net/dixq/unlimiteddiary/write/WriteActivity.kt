@@ -53,8 +53,10 @@ class WriteActivity : AppCompatActivity(), View.OnClickListener {
         setResult(RESULT_OK, intent)
         finish()
     }
+
     companion object {
         public val TAG_TITLE = "tag_title"
         public val TAG_BODY = "tag_body";
     }
+
 }

@@ -48,7 +48,13 @@ public class ItemAdapter extends BaseAdapter {
             TextView textView = (TextView)convertView.findViewById(R.id.txt_day);
             textView.setText(String.valueOf(dat.getDay()));
             ((TextView)convertView.findViewById(R.id.txt_dayofweek)).setText(dayOfWeek);
+            ((TextView)convertView.findViewById(R.id.txt_title)).setText(dat.getTitle());
             ((TextView)convertView.findViewById(R.id.txt_body)).setText(dat.getBody());
+            if(dat.getTitle().isEmpty()){
+                ((TextView)convertView.findViewById(R.id.txt_title)).setVisibility(View.GONE);
+            } else {
+                ((TextView)convertView.findViewById(R.id.txt_title)).setVisibility(View.VISIBLE);
+            }
         }
         return convertView;
     }

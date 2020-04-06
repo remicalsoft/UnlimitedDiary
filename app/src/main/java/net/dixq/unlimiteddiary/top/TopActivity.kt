@@ -6,21 +6,28 @@ import android.os.Bundle
 import android.os.Handler
 import android.view.View
 import android.widget.ListView
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.tasks.Tasks
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIOException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+import com.google.api.client.http.ByteArrayContent
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.R
-import net.dixq.unlimiteddiary.drive.DriveProcessor
+import net.dixq.unlimiteddiary.common.Define
+import net.dixq.unlimiteddiary.drive.DriveHelper
 import net.dixq.unlimiteddiary.singleton.DriveAccessor
 import net.dixq.unlimiteddiary.utils.Lg
 import net.dixq.unlimiteddiary.write.WriteActivity
+import java.io.IOException
+import java.util.*
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
 
-import java.io.*
-import java.util.LinkedList
 
 class TopActivity : AppCompatActivity() {
-    private val _driveProcesser = DriveProcessor(DriveAccessor.getInstance())
+    private val _driveProcesser =
+        DriveHelper(DriveAccessor.getInstance())
     private val _handler = Handler()
     private val _list:LinkedList<DiaryData> = LinkedList<DiaryData>()
 
@@ -47,6 +54,7 @@ class TopActivity : AppCompatActivity() {
                     val diaryDat = DiaryData(false, title, body)
                     diaryDat.setNowTime()
                     insertTopOfList(diaryDat)
+                    post(diaryDat)
                     val adapter = ItemAdapter(this@TopActivity, _list)
                     val listView = findViewById<ListView>(R.id.list)
                 }
@@ -93,7 +101,11 @@ class TopActivity : AppCompatActivity() {
             insertMonthLine(fileList!!, _list)
 
             val adapter = ItemAdapter(this@TopActivity, _list)
-            _handler.post { findViewById<ListView>(R.id.list).adapter = adapter }
+
+            _handler.post {
+                findViewById<ProgressBar>(R.id.progress).visibility = View.GONE;
+                findViewById<ListView>(R.id.list).adapter = adapter
+            }
 
         }.start()
     }
@@ -138,6 +150,10 @@ class TopActivity : AppCompatActivity() {
             }
             i++
         }
+    }
+
+    private fun post(diary:DiaryData){
+        _driveProcesser.post(diary.getFileName(), diary.getConvinedString().toByteArray())
     }
 
     companion object {

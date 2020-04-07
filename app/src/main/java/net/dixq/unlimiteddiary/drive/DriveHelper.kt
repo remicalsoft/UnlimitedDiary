@@ -5,7 +5,7 @@ import com.google.api.client.http.ByteArrayContent
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.common.Define
 import net.dixq.unlimiteddiary.exception.FatalErrorException
-import net.dixq.unlimiteddiary.singleton.DriveAccessor
+import net.dixq.unlimiteddiary.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.utils.Lg
 import net.dixq.unlimiteddiary.utils.StreamUtils
 import java.io.IOException
@@ -13,7 +13,7 @@ import java.util.*
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 
-class DriveHelper(private val _accessor: DriveAccessor) {
+class DriveHelper(private val _accessor: ApiAccessor) {
     private var _folderId: String? = null
 
     @get:Throws(IOException::class)
@@ -26,7 +26,7 @@ class DriveHelper(private val _accessor: DriveAccessor) {
             val list =
                 ArrayList<File>()
             val request =
-                DriveAccessor.getInstance().service.files().list()
+                ApiAccessor.getInstance().driveService.files().list()
             request.q =
                 "mimeType = 'application/vnd.google-apps.folder' and name = '" + Define.FOLDER_NAME + "'"
             do {
@@ -52,7 +52,7 @@ class DriveHelper(private val _accessor: DriveAccessor) {
         val list =
             LinkedList<File>()
         val request =
-            DriveAccessor.getInstance().service.files()
+            ApiAccessor.getInstance().driveService.files()
                 .list() //対象のフォルダ以下　かつ　フォルダは除外　かつ　ゴミ箱行きは除外
                 .setQ("'$folderId' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false")
         do {
@@ -68,7 +68,7 @@ class DriveHelper(private val _accessor: DriveAccessor) {
     @Throws(IOException::class)
     fun getContent(fileId: String?): String {
         val im =
-            DriveAccessor.getInstance().service.files()[fileId].executeMediaAsInputStream()
+            ApiAccessor.getInstance().driveService.files()[fileId].executeMediaAsInputStream()
         return StreamUtils.getText(im)
     }
 
@@ -79,7 +79,7 @@ class DriveHelper(private val _accessor: DriveAccessor) {
                 .setMimeType(Define.mimeTypeText)
                 .setName(fileName)
 
-            val googleFile = DriveAccessor.getInstance().service.files().create(metadata).execute()
+            val googleFile = ApiAccessor.getInstance().driveService.files().create(metadata).execute()
                 ?: throw IOException("Null result when requesting file creation.")
 
             googleFile.id
@@ -89,7 +89,7 @@ class DriveHelper(private val _accessor: DriveAccessor) {
                 Tasks.call(Executors.newSingleThreadExecutor(), Callable<Void>{
                     val metadata = File().setName(fileName)
                     val contentStream = ByteArrayContent(Define.mimeTypeText, content)
-                    DriveAccessor.getInstance().service.files().update( it , metadata, contentStream).execute()
+                    ApiAccessor.getInstance().driveService.files().update( it , metadata, contentStream).execute()
 
                     null
                 })

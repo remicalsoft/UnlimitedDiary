@@ -12,7 +12,8 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIO
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.R
-import net.dixq.unlimiteddiary.drive.DriveHelper
+import net.dixq.unlimiteddiary.google_api.DriveHelper
+import net.dixq.unlimiteddiary.google_api.PhotosApiHelper
 import net.dixq.unlimiteddiary.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.utils.Lg
 import net.dixq.unlimiteddiary.write.WriteActivity
@@ -25,6 +26,7 @@ class TopActivity : AppCompatActivity() {
         DriveHelper(ApiAccessor.getInstance())
     private val _handler = Handler()
     private val _list:LinkedList<DiaryData> = LinkedList<DiaryData>()
+    private val _photosHelper = PhotosApiHelper()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +39,7 @@ class TopActivity : AppCompatActivity() {
                 startActivityForResult(intent, REQUEST_WRITE)
             }
         }
+        _photosHelper.showInFolderList(ApiAccessor.getInstance().folderId)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

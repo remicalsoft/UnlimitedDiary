@@ -1,4 +1,4 @@
-package net.dixq.unlimiteddiary.drive
+package net.dixq.unlimiteddiary.google_api
 
 import com.google.android.gms.tasks.Tasks
 import com.google.api.client.http.ByteArrayContent

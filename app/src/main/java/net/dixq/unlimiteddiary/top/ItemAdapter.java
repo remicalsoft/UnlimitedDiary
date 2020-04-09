@@ -50,6 +50,7 @@ public class ItemAdapter extends BaseAdapter {
             ((TextView)convertView.findViewById(R.id.txt_dayofweek)).setText(dayOfWeek);
             ((TextView)convertView.findViewById(R.id.txt_title)).setText(dat.getTitle());
             ((TextView)convertView.findViewById(R.id.txt_body)).setText(dat.getBody());
+            ((TextView)convertView.findViewById(R.id.txt_time)).setText(String.format("%02d:%02d", dat.getHour(), dat.getMin()));
             if(dat.getTitle().isEmpty()){
                 ((TextView)convertView.findViewById(R.id.txt_title)).setVisibility(View.GONE);
             } else {

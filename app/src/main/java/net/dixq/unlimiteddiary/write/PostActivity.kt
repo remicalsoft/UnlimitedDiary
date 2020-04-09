@@ -3,7 +3,6 @@ package net.dixq.unlimiteddiary.write
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.view.KeyEvent
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -11,18 +10,23 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import net.dixq.unlimiteddiary.R
-import net.dixq.unlimiteddiary.top.DiaryData
 import net.dixq.unlimiteddiary.uiparts.OkDialog
-import java.util.*
 
 
-class WriteActivity : AppCompatActivity(), View.OnClickListener {
+class PostActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.main_write)
-        findViewById<EditText>(R.id.edt_body).requestFocus()
+        if(isNewPost()){
+            setContentView(R.layout.main_post)
+            findViewById<TextInputEditText>(R.id.edt_body).requestFocus()
+        } else {
+            setContentView(R.layout.main_content)
+            findViewById<TextView>(R.id.txt_title).text = intent.getStringExtra(TAG_TITLE)
+            findViewById<TextView>(R.id.txt_body).text = intent.getStringExtra(TAG_BODY)
+        }
         findViewById<ImageButton>(R.id.button_clear).setOnClickListener(this)
         findViewById<Button>(R.id.button_post).setOnClickListener(this)
     }
@@ -37,6 +41,10 @@ class WriteActivity : AppCompatActivity(), View.OnClickListener {
                 onClickPostButton()
             }
         }
+    }
+
+    private fun isNewPost():Boolean {
+        return intent.getStringExtra(TAG_NEW)!=null
     }
 
     private fun onClickPostButton(){
@@ -56,7 +64,8 @@ class WriteActivity : AppCompatActivity(), View.OnClickListener {
 
     companion object {
         public val TAG_TITLE = "tag_title"
-        public val TAG_BODY = "tag_body";
+        public val TAG_BODY = "tag_body"
+        public val TAG_NEW = "tag_new"
     }
 
 }

@@ -62,6 +62,9 @@ class DriveHelper(private val _accessor: ApiAccessor) {
             request.pageToken = files.nextPageToken
         } while (request.pageToken != null && request.pageToken.isNotEmpty()
         )
+        list.sortWith(Comparator {
+                a,b ->  b.name.compareTo(a.name)
+        })
         return list
     }
 

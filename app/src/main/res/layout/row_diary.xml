@@ -7,7 +7,10 @@
     <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginRight="16dp"
             android:orientation="vertical">
 
         <TextView
@@ -16,6 +19,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="10"
+                android:includeFontPadding="false"
                 android:textSize="24sp" />
 
         <TextView
@@ -24,7 +28,18 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="(月)"
+                android:layout_marginBottom="8dp"
+                android:includeFontPadding="false"
                 android:textSize="18sp" />
+
+        <TextView
+                android:id="@+id/txt_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:includeFontPadding="false"
+                android:text="00:00"
+                android:textSize="12sp" />
     </LinearLayout>
 
     <LinearLayout

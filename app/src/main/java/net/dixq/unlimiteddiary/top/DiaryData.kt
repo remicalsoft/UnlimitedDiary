@@ -1,8 +1,10 @@
 package net.dixq.unlimiteddiary.top
 
+import com.google.api.services.drive.model.File
 import java.util.*
 
 class DiaryData(val isMonthLine: Boolean){
+
     var year: Int = 0
     var month: Int = 0
     var day: Int = 0
@@ -12,6 +14,8 @@ class DiaryData(val isMonthLine: Boolean){
     var revision: Int = 0
     var title: String = ""
     var body: String = ""
+    var file: File? = null
+
     constructor(isMonthLine: Boolean, year:Int, month:Int) : this(isMonthLine) {
         this.year = year
         this.month = month
@@ -40,4 +44,11 @@ class DiaryData(val isMonthLine: Boolean){
     fun getFileName(): String {
         return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.txt", year, month, day, hour, min, count, revision)
     }
+    fun proceedRevision(){
+        revision++
+    }
+    fun getFileNamePreRevision(): String {
+        return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.txt", year, month, day, hour, min, count, revision-1)
+    }
+
 }

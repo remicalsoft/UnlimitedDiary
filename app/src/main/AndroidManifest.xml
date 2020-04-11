@@ -32,12 +32,6 @@
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <activity
-                android:name=".write.PostActivity"
-                android:label="@string/app_name"
-                android:windowSoftInputMode="stateAlwaysVisible"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
-        <activity
                 android:name=".content.ContentActivity"
                 android:label="@string/app_name"
                 android:windowSoftInputMode="stateAlwaysVisible"

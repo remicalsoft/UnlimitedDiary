@@ -12,6 +12,13 @@
             android:orientation="vertical"
     >
 
+        <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:elevation="8dp"
+                />
+
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/swipelayout"

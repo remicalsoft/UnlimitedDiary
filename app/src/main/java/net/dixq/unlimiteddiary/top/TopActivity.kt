@@ -17,15 +17,16 @@ import net.dixq.unlimiteddiary.R
 import net.dixq.unlimiteddiary.google_api.DriveHelper
 import net.dixq.unlimiteddiary.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.utils.Lg
-import net.dixq.unlimiteddiary.write.PostActivity
+import net.dixq.unlimiteddiary.content.*
+import net.dixq.unlimiteddiary.content.ContentActivity.RESULT_CREATED
+import net.dixq.unlimiteddiary.content.ContentActivity.RESULT_EDITED
 import java.io.IOException
 import java.util.*
 
 
 class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     AdapterView.OnItemClickListener {
-    private val _driveProcesser =
-        DriveHelper(ApiAccessor.getInstance())
+    private val _driveHelper = DriveHelper(ApiAccessor.getInstance())
     private val _handler = Handler()
     private val _list:LinkedList<DiaryData> = LinkedList<DiaryData>()
 
@@ -40,29 +41,52 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         val fab: View = findViewById(R.id.floating_action_button)
         fab.setOnClickListener {
             run {
-                val intent = Intent(this, PostActivity::class.java)
-                intent.putExtra(PostActivity.TAG_NEW,"")
-                startActivityForResult(intent, REQUEST_WRITE)
+                val intent = Intent(this, ContentActivity::class.java)
+                intent.putExtra(TAG_NEW,"")
+                startActivityForResult(intent, REQUEST_CONTENT)
             }
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        when(requestCode){
-            REQUEST_WRITE->{
-                if(resultCode == Activity.RESULT_OK) {
-                    val title = data!!.getStringExtra(PostActivity.TAG_TITLE)
-                    val body  = data.getStringExtra(PostActivity.TAG_BODY)
-                    val diaryDat = DiaryData(false, title, body)
-                    diaryDat.setNowTime()
-                    insertTopOfList(diaryDat)
-                    post(diaryDat)
-                    val adapter = ItemAdapter(this@TopActivity, _list)
-                    val listView = findViewById<ListView>(R.id.list)
-                }
+        when(resultCode){
+            RESULT_CREATED-> {
+                val title = data!!.getStringExtra(TAG_TITLE)
+                val body = data.getStringExtra(TAG_BODY)
+                val diaryDat = DiaryData(false, title, body)
+                diaryDat.setNowTime()
+                insertTopOfList(diaryDat)
+                post(diaryDat)
+                val adapter = ItemAdapter(this@TopActivity, _list)
+                val listView = findViewById<ListView>(R.id.list)
+            }
+            RESULT_EDITED->{
+                val title = data!!.getStringExtra(TAG_TITLE)
+                val body  = data.getStringExtra(TAG_BODY)
+                val filename = data.getStringExtra(TAG_EDIT_FILENAME)
+                val index = getDiaryData(filename)
+                _driveHelper.delete(_list[index].file)
+                _list[index].proceedRevision()
+                _list[index].title = title
+                _list[index].body = body
+//              _list[index].setNowTime()
+                post(_list[index])
+                val adapter = ItemAdapter(this@TopActivity, _list)
+                val listView = findViewById<ListView>(R.id.list)
             }
         }
+    }
+
+    private fun getDiaryData(fileName:String):Int {
+        var i=0
+        while(i<_list.size){
+            if(_list[i].getFileName() == fileName){
+                return i
+            }
+            i++
+        }
+        return -1
     }
 
     private fun insertTopOfList(dat:DiaryData){
@@ -90,7 +114,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         Thread {
             var fileList: LinkedList<File>? = null
             try {
-                fileList = _driveProcesser.allFile
+                fileList = _driveHelper.allFile
             } catch (e: UserRecoverableAuthIOException) {
                 // 認証が必要な場合に発生するException。これが発生したら認証のためのIntent発行を行い、認証後、DriveAPIを再呼び出しする
                 _handler.post { startActivityForResult(e.intent, REQUEST_AUTHORIZATION) }
@@ -118,7 +142,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         for (file in fileList) {
             try {
                 var dat = FileData.convertFileToDiaryData(file)
-                dat = FileData.readBody(_driveProcesser, file.id, dat)
+                dat = FileData.readBody(_driveHelper, file.id, dat)
                 if (dat == null) {
                     continue
                 }
@@ -159,12 +183,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     }
 
     private fun post(diary:DiaryData){
-        _driveProcesser.post(diary.getFileName(), diary.getConvinedString().toByteArray())
-    }
-
-    companion object {
-        private val REQUEST_AUTHORIZATION = 0
-        private val REQUEST_WRITE = 1;
+        _driveHelper.post(diary.getFileName(), diary.getConvinedString().toByteArray())
     }
 
     override fun onRefresh() {
@@ -172,10 +191,16 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     }
 
     override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-        val intent = Intent(this, PostActivity::class.java)
-        intent.putExtra(PostActivity.TAG_TITLE,_list[position].title)
-        intent.putExtra(PostActivity.TAG_BODY,_list[position].body)
-        startActivityForResult(intent, REQUEST_WRITE)
+        val intent = Intent(this, ContentActivity::class.java)
+        intent.putExtra(TAG_TITLE,_list[position].title)
+        intent.putExtra(TAG_BODY,_list[position].body)
+        intent.putExtra(TAG_EDIT_FILENAME,_list[position].getFileName())
+        startActivityForResult(intent, REQUEST_CONTENT)
+    }
+
+    companion object {
+        private val REQUEST_AUTHORIZATION = 0
+        private val REQUEST_CONTENT = 1
     }
 
 }

@@ -75,6 +75,18 @@ class DriveHelper(private val _accessor: ApiAccessor) {
         return StreamUtils.getText(im)
     }
 
+    fun delete(file:File?) {
+        Thread {
+            try {
+                file ?: return@Thread
+                ApiAccessor.getInstance().driveService.files().delete(file.id).execute()
+                    ?: throw IOException("Null result when requesting file creation.")
+            } catch (e:Exception){
+                Lg.e("ファイル削除失敗！");
+            }
+        }.start()
+    }
+
     fun post(fileName:String, content:ByteArray){
         Tasks.call(Executors.newSingleThreadExecutor(), Callable<String>{
             val metadata = File()

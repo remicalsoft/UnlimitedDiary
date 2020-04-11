@@ -18,6 +18,7 @@ public class FileData {
             dat.setMin(Integer.parseInt(split[4]));
             dat.setCount(Integer.parseInt(split[5]));
             dat.setRevision(Integer.parseInt(split[6]));
+            dat.setFile(file);
         } catch(Exception e){
             return null;
         }

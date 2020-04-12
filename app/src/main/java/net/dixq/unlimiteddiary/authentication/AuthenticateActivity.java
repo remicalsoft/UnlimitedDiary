@@ -17,6 +17,8 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
+
+import net.dixq.unlimiteddiary.google_api.DriveHelper;
 import net.dixq.unlimiteddiary.singleton.ApiAccessor;
 import net.dixq.unlimiteddiary.top.TopActivity;
 import java.util.Arrays;
@@ -41,9 +43,7 @@ public class AuthenticateActivity extends AppCompatActivity {
             startActivityForResult(_credential.newChooseAccountIntent(), AuthenticateActivity.REQUEST_ACCOUNT_PICKER);
         } else {
             _credential.setSelectedAccountName(accountName);
-            ApiAccessor.getInstance().setDriveService(getDriveService());
-            startNextActivity();
-
+            proceesNextStep();
         }
     }
 
@@ -58,9 +58,7 @@ public class AuthenticateActivity extends AppCompatActivity {
                     saveAccountName(accountName);
                     saveAccountType(accountType);
                     _credential.setSelectedAccountName(accountName);
-
-                    ApiAccessor.getInstance().setDriveService(getDriveService());
-                    startNextActivity();
+                    proceesNextStep();
                 } else {
                     finish();
                 }
@@ -70,6 +68,15 @@ public class AuthenticateActivity extends AppCompatActivity {
                 finish();
                 break;
         }
+    }
+
+    private void proceesNextStep(){
+        ApiAccessor.getInstance().setDriveService(getDriveService());
+        new Thread(()->{
+            DriveHelper driveHelper = new DriveHelper(ApiAccessor.getInstance());
+            ApiAccessor.getInstance().setFolderId(driveHelper.getFolderId());
+            _handler.post(this::startNextActivity);
+        }).start();
     }
 
     private void startNextActivity(){

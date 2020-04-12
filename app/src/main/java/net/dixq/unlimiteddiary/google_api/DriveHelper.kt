@@ -14,37 +14,26 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 
 class DriveHelper(private val _accessor: ApiAccessor) {
-    private var _folderId: String? = null
 
-    @get:Throws(IOException::class)
-    val folderId: String
-        get() = _folderId ?: folderIdCore
-
-    @get:Throws(IOException::class)
-    private val folderIdCore: String
-        private get() {
-            val list =
-                ArrayList<File>()
-            val request =
-                ApiAccessor.getInstance().driveService.files().list()
-            request.q =
-                "mimeType = 'application/vnd.google-apps.folder' and name = '" + Define.FOLDER_NAME + "'"
-            do {
-                val files = request.execute()
-                list.addAll(files.files)
-                request.pageToken = files.nextPageToken
-            } while (request.pageToken != null && request.pageToken.length > 0)
-            if (list.size != 1) {
-                throw FatalErrorException("UnlimitedDiaryのフォルダが見つからないか、2つ以上あります")
-            }
-            return list[0].id
+    fun getFolderId():String {
+        val list = ArrayList<File>()
+        val request = _accessor.driveService.files().list()
+        request.q = "mimeType = 'application/vnd.google-apps.folder' and name = '" + Define.FOLDER_NAME + "'"
+        do {
+            val files = request.execute()
+            list.addAll(files.files)
+            request.pageToken = files.nextPageToken
+        } while (request.pageToken != null && request.pageToken.length > 0)
+        if (list.size != 1) {
+            throw FatalErrorException("UnlimitedDiaryのフォルダが見つからないか、2つ以上あります")
         }
+        return list[0].id
+    }
 
     @get:Throws(IOException::class)
     val allFile: LinkedList<File>
         get() {
-            _folderId = folderId
-            return getAllFile(_folderId)
+            return getAllFile(_accessor.folderId)
         }
 
     @Throws(IOException::class)
@@ -52,7 +41,7 @@ class DriveHelper(private val _accessor: ApiAccessor) {
         val list =
             LinkedList<File>()
         val request =
-            ApiAccessor.getInstance().driveService.files()
+            _accessor.driveService.files()
                 .list() //対象のフォルダ以下　かつ　フォルダは除外　かつ　ゴミ箱行きは除外
                 .setQ("'$folderId' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false")
         do {
@@ -70,53 +59,20 @@ class DriveHelper(private val _accessor: ApiAccessor) {
 
     @Throws(IOException::class)
     fun getContent(fileId: String?): String {
-        val im =
-            ApiAccessor.getInstance().driveService.files()[fileId].executeMediaAsInputStream()
+        val im = _accessor.driveService.files()[fileId].executeMediaAsInputStream()
         return StreamUtils.getText(im)
     }
 
-    fun delete(file:File?) {
-        Thread {
-            try {
-                file ?: return@Thread
-                ApiAccessor.getInstance().driveService.files().delete(file.id).execute()
-                    ?: throw IOException("Null result when requesting file creation.")
-            } catch (e:Exception){
-                Lg.e("ファイル削除失敗！");
-            }
-        }.start()
-    }
-
-    fun post(fileName:String, content:ByteArray){
-        Tasks.call(Executors.newSingleThreadExecutor(), Callable<String>{
-            val metadata = File()
-                .setParents(listOf(_folderId))
-                .setMimeType(Define.mimeTypeText)
-                .setName(fileName)
-
-            val googleFile = ApiAccessor.getInstance().driveService.files().create(metadata).execute()
-                ?: throw IOException("Null result when requesting file creation.")
-
-            googleFile.id
+    fun delete(deleteFileId:String){
+        Tasks.call(Executors.newSingleThreadExecutor(), Callable<Void>{
+            _accessor.driveService.files().delete(deleteFileId).execute()
+            null
         })
             .addOnSuccessListener {
-                // it: String としてファイルIDを取得できる。
-                Tasks.call(Executors.newSingleThreadExecutor(), Callable<Void>{
-                    val metadata = File().setName(fileName)
-                    val contentStream = ByteArrayContent(Define.mimeTypeText, content)
-                    ApiAccessor.getInstance().driveService.files().update( it , metadata, contentStream).execute()
-
-                    null
-                })
-                    .addOnSuccessListener {
-                        Lg.e("投稿成功")
-                    }
-                    .addOnFailureListener {
-                        Lg.e("投稿失敗")
-                    }
+                Lg.d("削除成功")
             }
             .addOnFailureListener {
-                Lg.e("新規ファイル作成に失敗")
+                Lg.d("削除失敗")
             }
     }
 }

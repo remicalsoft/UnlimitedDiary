@@ -6,12 +6,15 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.*
 import android.widget.Button
+import android.widget.LinearLayout
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import com.google.android.material.textfield.TextInputEditText
 import net.dixq.unlimiteddiary.R
+import net.dixq.unlimiteddiary.common.JsonParser
 import net.dixq.unlimiteddiary.content.ContentActivity.RESULT_CREATED
 import net.dixq.unlimiteddiary.content.ContentActivity.RESULT_EDITED
+import net.dixq.unlimiteddiary.top.DiaryData
 import net.dixq.unlimiteddiary.uiparts.OkDialog
 
 
@@ -19,9 +22,7 @@ class PostFragment : Fragment(), View.OnClickListener {
 
     var _isNew:Boolean = false
     var _activity:ContentActivity?=null
-    var _title:String? = null
-    var _body:String? = null
-    var _filename:String? = null
+    var _diaryData:DiaryData? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -31,9 +32,8 @@ class PostFragment : Fragment(), View.OnClickListener {
     override fun onCreate(bundle:Bundle?){
         super.onCreate(bundle)
         if(arguments!=null) {
-            _title = arguments!!.getString(TAG_TITLE)
-            _body = arguments!!.getString(TAG_BODY)
-            _filename = arguments!!.getString(TAG_EDIT_FILENAME)
+            _diaryData = DiaryData(false)
+            _diaryData!!.setFromJson(arguments!!.getString(TAG_JSON_DIARY)!!)
         }
     }
 
@@ -51,8 +51,8 @@ class PostFragment : Fragment(), View.OnClickListener {
         _isNew = _activity!!.intent.getStringExtra(TAG_NEW)!=null
         view.findViewById<Button>(R.id.button_post).setOnClickListener(this)
         if(!_isNew) {
-            view.findViewById<TextInputEditText>(R.id.edt_title).setText(_title)
-            view.findViewById<TextInputEditText>(R.id.edt_body).setText(_body)
+            view.findViewById<TextInputEditText>(R.id.edt_title).setText(_diaryData!!.title)
+            view.findViewById<TextInputEditText>(R.id.edt_body).setText(_diaryData!!.body)
         }
         view.findViewById<TextInputEditText>(R.id.edt_body).requestFocus()
     }
@@ -71,16 +71,17 @@ class PostFragment : Fragment(), View.OnClickListener {
             OkDialog(_activity as Context, "何も入力されていません。", null).show()
             return
         }
-        val intent = Intent()
-        intent.putExtra(TAG_TITLE, view!!.findViewById<TextInputEditText>(R.id.edt_title).text.toString())
-        intent.putExtra(TAG_BODY,  view!!.findViewById<TextInputEditText>(R.id.edt_body) .text.toString())
-        intent.putExtra(TAG_EDIT_FILENAME, _filename)
-        if(_isNew) {
-            _activity!!.setResult(RESULT_CREATED, intent)
-        } else {
-            _activity!!.setResult(RESULT_EDITED, intent)
+        if(_diaryData==null){
+            _diaryData = DiaryData(false)
         }
-        _activity!!.finish()
+        _diaryData!!.title = view!!.findViewById<TextInputEditText>(R.id.edt_title).text.toString()
+        _diaryData!!.body = view!!.findViewById<TextInputEditText>(R.id.edt_body).text.toString()
+        val json = JsonParser.encodeJson(_diaryData)
+        val bundle = Bundle()
+        bundle.putString(TAG_JSON_DIARY, json)
+        val fragment = PostingFragment();
+        fragment.arguments = bundle
+        _activity!!.changeFragment(fragment)
     }
 
 }

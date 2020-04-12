@@ -1,20 +1,25 @@
 package net.dixq.unlimiteddiary.top
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.api.services.drive.model.File
+import net.dixq.unlimiteddiary.utils.Lg
 import java.util.*
 
-class DiaryData(val isMonthLine: Boolean){
+data class DiaryData(val isMonthLine: Boolean) {
 
     var year: Int = 0
     var month: Int = 0
     var day: Int = 0
     var hour: Int = 0
     var min: Int = 0
-    var count: Int = 0
+    var sec: Int = 0
+    var mill: Int = 0
     var revision: Int = 0
     var title: String = ""
     var body: String = ""
-    var file: File? = null
+    var author: String = ""
+    var color: String = ""
+    var fileId: String = ""
 
     constructor(isMonthLine: Boolean, year:Int, month:Int) : this(isMonthLine) {
         this.year = year
@@ -34,21 +39,39 @@ class DiaryData(val isMonthLine: Boolean){
         day = cl.get(Calendar.DATE)
         hour = cl.get(Calendar.HOUR_OF_DAY)
         min = cl.get(Calendar.MINUTE)
-    }
-    fun getConvinedString():String{
-        if(title.isEmpty()){
-            return body
-        }
-        return "<title>$title</title>\n$body"
+        sec = cl.get(Calendar.SECOND)
+        mill = (System.currentTimeMillis() % 1000).toInt()
     }
     fun getFileName(): String {
-        return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.txt", year, month, day, hour, min, count, revision)
+        return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.txt", year, month, day, hour, min, sec, mill)
     }
     fun proceedRevision(){
         revision++
     }
-    fun getFileNamePreRevision(): String {
-        return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.txt", year, month, day, hour, min, count, revision-1)
-    }
+    fun setFromJson(json:String){
+        val mapper = ObjectMapper()
+        try {
+            val node = mapper.readTree(json);
 
+            year = node.get("year").asInt()
+            month = node.get("month").asInt()
+            day = node.get("day").asInt()
+            hour = node.get("hour").asInt()
+            min = node.get("min").asInt()
+            sec = node.get("sec").asInt()
+            mill = node.get("mill").asInt()
+            revision = node.get("revision").asInt()
+            title = node.get("title").asText()
+            body = node.get("body").asText()
+            author = node.get("author").asText()
+            color = node.get("color").asText()
+            fileId = node.get("fileId").asText()
+
+        } catch (e:Exception) {
+            Lg.e("json exception : "+e.message)
+        }
+    }
+    fun isNewPostData():Boolean {
+        return year==0
+    }
 }

@@ -1,6 +1,5 @@
 package net.dixq.unlimiteddiary.top
 
-import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -14,12 +13,13 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIO
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.R
+import net.dixq.unlimiteddiary.common.JsonParser
+import net.dixq.unlimiteddiary.content.ContentActivity
+import net.dixq.unlimiteddiary.content.TAG_JSON_DIARY
+import net.dixq.unlimiteddiary.content.TAG_NEW
 import net.dixq.unlimiteddiary.google_api.DriveHelper
 import net.dixq.unlimiteddiary.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.utils.Lg
-import net.dixq.unlimiteddiary.content.*
-import net.dixq.unlimiteddiary.content.ContentActivity.RESULT_CREATED
-import net.dixq.unlimiteddiary.content.ContentActivity.RESULT_EDITED
 import java.io.IOException
 import java.util.*
 
@@ -28,7 +28,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     AdapterView.OnItemClickListener {
     private val _driveHelper = DriveHelper(ApiAccessor.getInstance())
     private val _handler = Handler()
-    private val _list:LinkedList<DiaryData> = LinkedList<DiaryData>()
+    private var _list:LinkedList<DiaryData> = LinkedList<DiaryData>()
 
     // ここにアクセスすると、無制限アップロード可能に。photos.google.com/settings
 
@@ -36,7 +36,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_top)
         findViewById<SwipeRefreshLayout>(R.id.swipelayout).setOnRefreshListener(this);
-        findViewById<ListView>(R.id.list).setOnItemClickListener(this)
+        findViewById<ListView>(R.id.list).onItemClickListener = this
         readAndLayout()
         val fab: View = findViewById(R.id.floating_action_button)
         fab.setOnClickListener {
@@ -51,29 +51,20 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(resultCode){
-            RESULT_CREATED-> {
-                val title = data!!.getStringExtra(TAG_TITLE)
-                val body = data.getStringExtra(TAG_BODY)
-                val diaryDat = DiaryData(false, title, body)
-                diaryDat.setNowTime()
-                insertTopOfList(diaryDat)
-                post(diaryDat)
+            RESULT_OK-> {
+                val diaryData = DiaryData(false)
+                diaryData.setFromJson(data!!.getStringExtra(TAG_JSON_DIARY))
+                val index = getDiaryData(diaryData.getFileName())
+                if(index == -1){
+                    //見つからなかったら新規投稿
+                    insertTopOfList(diaryData)
+                } else {
+                    //見つかったら差し替え
+                    _list[index] = diaryData
+                }
                 val adapter = ItemAdapter(this@TopActivity, _list)
                 val listView = findViewById<ListView>(R.id.list)
-            }
-            RESULT_EDITED->{
-                val title = data!!.getStringExtra(TAG_TITLE)
-                val body  = data.getStringExtra(TAG_BODY)
-                val filename = data.getStringExtra(TAG_EDIT_FILENAME)
-                val index = getDiaryData(filename)
-                _driveHelper.delete(_list[index].file)
-                _list[index].proceedRevision()
-                _list[index].title = title
-                _list[index].body = body
-//              _list[index].setNowTime()
-                post(_list[index])
-                val adapter = ItemAdapter(this@TopActivity, _list)
-                val listView = findViewById<ListView>(R.id.list)
+                listView.adapter = adapter
             }
         }
     }
@@ -124,8 +115,8 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
                 Lg.e("IOException")
             }
 
-            createListData(fileList!!, _list)
-            insertMonthLine(fileList!!, _list)
+            _list = createListData(fileList!!)
+            _list = insertMonthLine(fileList!!, _list)
 
             val adapter = ItemAdapter(this@TopActivity, _list)
 
@@ -138,25 +129,22 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         }.start()
     }
 
-    private fun createListData(fileList:LinkedList<File>, list:LinkedList<DiaryData>){
+    private fun createListData(fileList:LinkedList<File>):LinkedList<DiaryData>{
+        val list = LinkedList<DiaryData>()
         for (file in fileList) {
-            try {
-                var dat = FileData.convertFileToDiaryData(file)
-                dat = FileData.readBody(_driveHelper, file.id, dat)
-                if (dat == null) {
-                    continue
-                }
-                _list.add(dat)
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
+            val content = _driveHelper.getContent(file.id)
+            val diary = DiaryData(false)
+            diary.setFromJson(content)
+            diary.fileId = file.id
+            list.add(diary)
         }
+        return list
     }
 
     // 日記データの中に月ラインを挿入する
-    private fun insertMonthLine(fileList:LinkedList<File>, list:LinkedList<DiaryData>){
+    private fun insertMonthLine(fileList:LinkedList<File>, list:LinkedList<DiaryData>):LinkedList<DiaryData>{
         if (list.size == 0) {
-            return
+            return list
         }
 
         if(!list[0].isMonthLine) {
@@ -180,10 +168,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
             }
             i++
         }
-    }
-
-    private fun post(diary:DiaryData){
-        _driveHelper.post(diary.getFileName(), diary.getConvinedString().toByteArray())
+        return list
     }
 
     override fun onRefresh() {
@@ -192,9 +177,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
     override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
         val intent = Intent(this, ContentActivity::class.java)
-        intent.putExtra(TAG_TITLE,_list[position].title)
-        intent.putExtra(TAG_BODY,_list[position].body)
-        intent.putExtra(TAG_EDIT_FILENAME,_list[position].getFileName())
+        intent.putExtra(TAG_JSON_DIARY, JsonParser.encodeJson(_list[position]))
         startActivityForResult(intent, REQUEST_CONTENT)
     }
 

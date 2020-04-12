@@ -9,13 +9,13 @@ import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import net.dixq.unlimiteddiary.R
+import net.dixq.unlimiteddiary.top.DiaryData
 
 
 class DetailFragment : Fragment() {
 
-    private var _title:String? = null
-    private var _body:String? = null
-    private var _filename:String? = null
+    private var _jsonDiary:String? = null
+    private var _diaryData:DiaryData? = null
 
     var _activity:ContentActivity?=null
 
@@ -40,11 +40,11 @@ class DetailFragment : Fragment() {
         _activity!!.supportActionBar!!.setDisplayHomeAsUpEnabled(true)        // Backボタンを有効にする
         _activity!!.supportActionBar!!.setHomeButtonEnabled(true)
         _activity!!.supportActionBar!!.title = ""
-        _title = _activity!!.intent.getStringExtra(TAG_TITLE)
-        _body = _activity!!.intent.getStringExtra(TAG_BODY)
-        _filename = _activity!!.intent.getStringExtra(TAG_EDIT_FILENAME)
-        view.findViewById<TextView>(R.id.txt_title).text = _title
-        view.findViewById<TextView>(R.id.txt_body).text = _body
+        _diaryData = DiaryData(false)
+        _jsonDiary = _activity!!.intent.getStringExtra(TAG_JSON_DIARY)
+        _diaryData!!.setFromJson(_jsonDiary!!)
+        view.findViewById<TextView>(R.id.txt_title).text = _diaryData!!.title
+        view.findViewById<TextView>(R.id.txt_body).text = _diaryData!!.body
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -56,9 +56,7 @@ class DetailFragment : Fragment() {
         when (item.itemId) {
             R.id.menu_edit -> {
                 val bundle = Bundle()
-                bundle.putString(TAG_TITLE, _title)
-                bundle.putString(TAG_BODY, _body)
-                bundle.putString(TAG_EDIT_FILENAME, _filename)
+                bundle.putString(TAG_JSON_DIARY, _jsonDiary)
                 val fragment = PostFragment()
                 fragment.arguments = bundle
                 _activity!!.changeFragment(fragment)

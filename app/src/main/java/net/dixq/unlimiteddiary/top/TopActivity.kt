@@ -112,7 +112,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
             } catch (e: GoogleAuthIOException) {
                 Lg.e("Developer ConsoleでClientIDを設定していない場合に発生する")
             } catch (e: IOException) {
-                Lg.e("IOException")
+                Lg.e("IOException:"+e.message)
             }
 
             _list = createListData(fileList!!)

@@ -31,59 +31,29 @@ import java.util.*
 
 
 class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
+
     private var _credential: GoogleAccountCredential? = null
     private val _handler = Handler()
     private var _isAuthenticationReady = false
     private var _isNameReady = false
+    private var _buttons = Buttons()
+
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
         if (PrefUtils.read(this, KEY_HANDLE_NAME).isEmpty()) {
             setContentView(R.layout.main_authentication)
             findViewById<View>(R.id.button_submit).setOnClickListener(this)
-            layoutButtons()
+            _buttons.layout(this)
         } else {
             _isNameReady = true
         }
         setupAuthentication()
     }
 
-    private fun layoutButtons(){
-        if(_isNameReady){
-            return
-        }
-        val root = findViewById<LinearLayout>(R.id.layout_button_root)
-        val rlpm = root.layoutParams as LinearLayout.LayoutParams
-        rlpm.gravity = Gravity.CENTER
-        root.layoutParams = rlpm
-
-        createLayoutAndButtons(root, 6*0);
-        createLayoutAndButtons(root, 6*1);
-        createLayoutAndButtons(root, 6*2);
-    }
-
-    private fun createLayoutAndButtons(root:LinearLayout, index:Int){
-        val layout = LinearLayout(this)
-        layout.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        for(i in 0..5){
-            layout.addView(createButton(index+i))
-        }
-        root.addView(layout)
-    }
-
-    private fun createButton(id:Int):Button {
-        val c = ContextThemeWrapper(this, R.style.ThemeColorButton)
-        val button = Button(c)
-        val dp54 = convertDpToPx(this, 54)
-        val dp60 = convertDpToPx(this, 60)
-        button.layoutParams = LinearLayout.LayoutParams(dp54, dp60)
-        button.backgroundTintList = ColorStateList.valueOf(getColor(colors[id]))
-        return button
-    }
-
     private fun setupAuthentication() {
         val credential = GoogleAccountCredential.usingOAuth2(
             this,
-            Arrays.asList(
+            listOf(
                 DriveScopes.DRIVE,
                 "https://www.googleapis.com/auth/photoslibrary"
             )
@@ -98,7 +68,6 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
             )
         } else {
             credential.setSelectedAccountName(accountName)
-            prepareDrive()
             _isAuthenticationReady = true
             proceesNextStep()
         }
@@ -127,7 +96,6 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
                     accountType
                 )
                 _credential!!.selectedAccountName = accountName
-                prepareDrive()
                 _isAuthenticationReady = true
                 proceesNextStep()
             } else {
@@ -140,31 +108,30 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View) {
         val edt = findViewById<TextInputEditText>(R.id.edt_body)
         if (edt.text.toString().isEmpty()) {
-            OkDialog(this, "ニックネームを入力してください", null)
+            OkDialog(this, "ニックネームを入力してください。", null).show()
             return
         }
-        PrefUtils.save(
-            this,
-            KEY_HANDLE_NAME,
-            edt.text.toString()
-        )
+        val color = _buttons.getColor()
+        if(color == -1){
+            OkDialog(this, "カラーを選択してください。", null).show()
+            return
+        }
+        PrefUtils.save(this, KEY_HANDLE_NAME, edt.text.toString())
+        PrefUtils.save(this, KEY_HANDLE_NAME_COLOR, color.toString())
         _isNameReady = true
         proceesNextStep()
     }
 
-    private fun prepareDrive() {
+    private fun proceesNextStep() {
+        if (!_isAuthenticationReady || !_isNameReady) {
+            return
+        }
         ApiAccessor.getInstance().driveService = driveService
         Thread(Runnable {
             val driveHelper = DriveHelper(ApiAccessor.getInstance())
             ApiAccessor.getInstance().folderId = driveHelper.getFolderId()
+            _handler.post { startNextActivity() }
         }).start()
-    }
-
-    private fun proceesNextStep() {
-        if (_isAuthenticationReady == false || _isNameReady == false) {
-            return
-        }
-        _handler.post { startNextActivity() }
     }
 
     private fun startNextActivity() {
@@ -184,27 +151,7 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
         const val REQUEST_ACCOUNT_PICKER = 1
         private const val KEY_AUTH_ACOUNT_NAME = "KEY_AUTH_ACOUNT_NAME"
         private const val KEY_AUTH_ACOUNT_TYPE = "KEY_AUTH_ACOUNT_TYPE"
-        private const val KEY_HANDLE_NAME = "KEY_HANDLE_NAME"
-
-        private val colors = intArrayOf(
-            R.color.md_red_800,
-            R.color.md_pink_800,
-            R.color.md_purple_800,
-            R.color.md_deep_purple_800,
-            R.color.md_indigo_800,
-            R.color.md_blue_800,
-            R.color.md_light_blue_800,
-            R.color.md_cyan_800,
-            R.color.md_teal_800,
-            R.color.md_green_800,
-            R.color.md_light_green_800,
-            R.color.md_lime_800,
-            R.color.md_yellow_800,
-            R.color.md_amber_800,
-            R.color.md_orange_800,
-            R.color.md_deep_orange_800,
-            R.color.md_brown_800,
-            R.color.md_blue_grey_800
-        )
+        public const val KEY_HANDLE_NAME = "KEY_HANDLE_NAME"
+        public const val KEY_HANDLE_NAME_COLOR = "KEY_HANDLE_NAME_COLOR"
     }
 }

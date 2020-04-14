@@ -1,5 +1,6 @@
 package net.dixq.unlimiteddiary.top
 
+import android.graphics.Color
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.utils.Lg
@@ -18,7 +19,7 @@ data class DiaryData(val isMonthLine: Boolean) {
     var title: String = ""
     var body: String = ""
     var author: String = ""
-    var color: String = ""
+    var color: String = Color.WHITE.toString()
     var fileId: String = ""
 
     constructor(isMonthLine: Boolean, year:Int, month:Int) : this(isMonthLine) {

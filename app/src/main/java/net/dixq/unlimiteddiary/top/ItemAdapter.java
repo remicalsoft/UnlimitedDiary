@@ -9,6 +9,8 @@ import android.widget.TextView;
 import net.dixq.unlimiteddiary.R;
 import net.dixq.unlimiteddiary.utils.CalendarUtils;
 
+import org.w3c.dom.Text;
+
 import java.util.List;
 
 
@@ -51,6 +53,11 @@ public class ItemAdapter extends BaseAdapter {
             ((TextView)convertView.findViewById(R.id.txt_title)).setText(dat.getTitle());
             ((TextView)convertView.findViewById(R.id.txt_body)).setText(dat.getBody());
             ((TextView)convertView.findViewById(R.id.txt_time)).setText(String.format("%02d:%02d", dat.getHour(), dat.getMin()));
+            TextView author = convertView.findViewById(R.id.txt_author);
+            author.setText(dat.getAuthor());
+            if(!dat.getColor().isEmpty()) {
+                author.setBackgroundColor(Integer.parseInt(dat.getColor()));
+            }
             if(dat.getTitle().isEmpty()){
                 ((TextView)convertView.findViewById(R.id.txt_title)).setVisibility(View.GONE);
             } else {

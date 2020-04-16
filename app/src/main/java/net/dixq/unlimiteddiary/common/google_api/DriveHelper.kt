@@ -1,13 +1,13 @@
-package net.dixq.unlimiteddiary.google_api
+package net.dixq.unlimiteddiary.common.google_api
 
 import com.google.android.gms.tasks.Tasks
-import com.google.api.client.http.ByteArrayContent
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.common.Define
-import net.dixq.unlimiteddiary.exception.FatalErrorException
-import net.dixq.unlimiteddiary.singleton.ApiAccessor
-import net.dixq.unlimiteddiary.utils.Lg
-import net.dixq.unlimiteddiary.utils.StreamUtils
+import net.dixq.unlimiteddiary.common.exception.FatalErrorException
+import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
+import net.dixq.unlimiteddiary.common.Lg
+import net.dixq.unlimiteddiary.common.StopWatch
+import net.dixq.unlimiteddiary.common.StreamUtils
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.Callable
@@ -38,6 +38,7 @@ class DriveHelper(private val _accessor: ApiAccessor) {
 
     @Throws(IOException::class)
     fun getAllFile(folderId: String?): LinkedList<File> {
+        val sw = StopWatch();
         val list =
             LinkedList<File>()
         val request =
@@ -54,6 +55,7 @@ class DriveHelper(private val _accessor: ApiAccessor) {
         list.sortWith(Comparator {
                 a,b ->  b.name.compareTo(a.name)
         })
+        Lg.e("sw:"+sw.getDiff());
         return list
     }
 

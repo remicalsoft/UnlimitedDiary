@@ -1,4 +1,4 @@
-package net.dixq.unlimiteddiary.uiparts
+package net.dixq.unlimiteddiary.common
 
 import android.content.Context
 import android.content.DialogInterface

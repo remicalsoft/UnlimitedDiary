@@ -8,7 +8,7 @@ import net.dixq.unlimiteddiary.top.DiaryData;
 
 import java.io.IOException;
 
-public class JsonParser {
+public class JsonUtils {
 
 //    public static DiaryData decodeJsonToDiaryData(String json){
 //        ObjectMapper mapper = new ObjectMapper();
@@ -19,7 +19,7 @@ public class JsonParser {
 //        return diary;
 //    }
 
-    public static String encodeJson(DiaryData diary){
+    public static String encode(DiaryData diary){
         ObjectMapper mapper = new ObjectMapper();
         String json = null;
         try {

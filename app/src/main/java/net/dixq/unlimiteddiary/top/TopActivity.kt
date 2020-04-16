@@ -1,6 +1,8 @@
 package net.dixq.unlimiteddiary.top
 
+import android.content.ContentValues
 import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import android.os.Handler
 import android.view.View
@@ -13,13 +15,15 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIO
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.R
-import net.dixq.unlimiteddiary.common.JsonParser
+import net.dixq.unlimiteddiary.common.DbHelper
+import net.dixq.unlimiteddiary.common.JsonUtils
+import net.dixq.unlimiteddiary.common.Lg
+import net.dixq.unlimiteddiary.common.StopWatch
+import net.dixq.unlimiteddiary.common.google_api.DriveHelper
+import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.content.ContentActivity
 import net.dixq.unlimiteddiary.content.TAG_JSON_DIARY
 import net.dixq.unlimiteddiary.content.TAG_NEW
-import net.dixq.unlimiteddiary.google_api.DriveHelper
-import net.dixq.unlimiteddiary.singleton.ApiAccessor
-import net.dixq.unlimiteddiary.utils.Lg
 import java.io.IOException
 import java.util.*
 
@@ -29,12 +33,14 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     private val _driveHelper = DriveHelper(ApiAccessor.getInstance())
     private val _handler = Handler()
     private var _list:LinkedList<DiaryData> = LinkedList<DiaryData>()
+    private var _db:DbHelper? = null
 
     // ここにアクセスすると、無制限アップロード可能に。photos.google.com/settings
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_top)
+        _db = DbHelper(this.applicationContext)
         findViewById<SwipeRefreshLayout>(R.id.swipelayout).setOnRefreshListener(this);
         findViewById<ListView>(R.id.list).onItemClickListener = this
         readAndLayout()
@@ -116,10 +122,11 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
             }
 
             _list = createListData(fileList!!)
+            saveList(_list)
+            read()
             _list = insertMonthLine(fileList!!, _list)
 
             val adapter = ItemAdapter(this@TopActivity, _list)
-
             _handler.post {
                 findViewById<ProgressBar>(R.id.progress).visibility = View.GONE;
                 findViewById<ListView>(R.id.list).adapter = adapter
@@ -130,6 +137,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     }
 
     private fun createListData(fileList:LinkedList<File>):LinkedList<DiaryData>{
+        val sw = StopWatch();
         val list = LinkedList<DiaryData>()
         for (file in fileList) {
             val content = _driveHelper.getContent(file.id)
@@ -137,6 +145,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
             diary.setFromJson(content)
             diary.fileId = file.id
             list.add(diary)
+            Lg.e("sw2:"+sw.diff)
         }
         return list
     }
@@ -177,8 +186,38 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
     override fun onItemClick(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
         val intent = Intent(this, ContentActivity::class.java)
-        intent.putExtra(TAG_JSON_DIARY, JsonParser.encodeJson(_list[position]))
+        intent.putExtra(TAG_JSON_DIARY, JsonUtils.encode(_list[position]))
         startActivityForResult(intent, REQUEST_CONTENT)
+    }
+
+    private fun saveList(list:LinkedList<DiaryData>){
+        val db = _db!!.writableDatabase
+        for(data in list) {
+            val cvalues = ContentValues()
+            cvalues.put(DbHelper.COLUMN_NAME_TITLE, data.getFileName())
+            cvalues.put(DbHelper.COLUMN_NAME_SUBTITLE, JsonUtils.encode(data))
+            db.insert(DbHelper.TABLE_NAME, null, cvalues)
+        }
+    }
+
+    private fun read() {
+        val db: SQLiteDatabase = _db!!.readableDatabase
+        val cursor = db.query(
+            DbHelper.TABLE_NAME,
+            arrayOf(DbHelper.COLUMN_NAME_TITLE, DbHelper.COLUMN_NAME_SUBTITLE),
+            null,
+            null,
+            null,
+            null,
+            null
+        )
+        cursor.moveToFirst()
+        for (i in 0 until cursor.count) {
+            Lg.e("FileName: " + cursor.getString(0))
+            Lg.e("json: " + cursor.getString(1))
+            cursor.moveToNext()
+        }
+        cursor.close()
     }
 
     companion object {

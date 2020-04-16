@@ -13,15 +13,14 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import androidx.appcompat.widget.Toolbar
-import androidx.core.graphics.scaleMatrix
 import androidx.fragment.app.Fragment
 import com.google.android.material.textfield.TextInputEditText
 import net.dixq.unlimiteddiary.R
 import net.dixq.unlimiteddiary.authentication.AuthenticateActivity
-import net.dixq.unlimiteddiary.common.JsonParser
+import net.dixq.unlimiteddiary.common.JsonUtils
 import net.dixq.unlimiteddiary.common.PrefUtils
 import net.dixq.unlimiteddiary.top.DiaryData
-import net.dixq.unlimiteddiary.uiparts.OkDialog
+import net.dixq.unlimiteddiary.common.OkDialog
 import net.dixq.unlimiteddiary.utils.convertDpToPx
 import java.io.IOException
 
@@ -127,7 +126,11 @@ class PostFragment : Fragment(), View.OnClickListener {
         textCount += view!!.findViewById<TextInputEditText>(R.id.edt_title).text.toString().length
         textCount += view!!.findViewById<TextInputEditText>(R.id.edt_body).text.toString().length
         if(textCount==0){
-            OkDialog(_activity as Context, "何も入力されていません。", null).show()
+            OkDialog(
+                _activity as Context,
+                "何も入力されていません。",
+                null
+            ).show()
             return
         }
         if(_diaryData==null){
@@ -137,7 +140,7 @@ class PostFragment : Fragment(), View.OnClickListener {
         _diaryData!!.body = view!!.findViewById<TextInputEditText>(R.id.edt_body).text.toString()
         _diaryData!!.author = PrefUtils.read(context, AuthenticateActivity.KEY_HANDLE_NAME)
         _diaryData!!.color = PrefUtils.read(context, AuthenticateActivity.KEY_HANDLE_NAME_COLOR)
-        val json = JsonParser.encodeJson(_diaryData)
+        val json = JsonUtils.encode(_diaryData)
         val bundle = Bundle()
         bundle.putString(TAG_JSON_DIARY, json)
         val fragment = PostingFragment();

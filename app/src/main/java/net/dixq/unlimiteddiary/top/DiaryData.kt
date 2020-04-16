@@ -2,8 +2,7 @@ package net.dixq.unlimiteddiary.top
 
 import android.graphics.Color
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.api.services.drive.model.File
-import net.dixq.unlimiteddiary.utils.Lg
+import net.dixq.unlimiteddiary.common.Lg
 import java.util.*
 
 data class DiaryData(val isMonthLine: Boolean) {

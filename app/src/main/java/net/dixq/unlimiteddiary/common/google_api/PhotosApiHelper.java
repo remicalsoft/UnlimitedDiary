@@ -1,8 +1,8 @@
-package net.dixq.unlimiteddiary.google_api;
+package net.dixq.unlimiteddiary.common.google_api;
 
 import net.dixq.unlimiteddiary.authentication.JsonParser;
-import net.dixq.unlimiteddiary.singleton.ApiAccessor;
-import net.dixq.unlimiteddiary.utils.Lg;
+import net.dixq.unlimiteddiary.common.singleton.ApiAccessor;
+import net.dixq.unlimiteddiary.common.Lg;
 
 import java.io.IOException;
 

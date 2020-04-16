@@ -1,4 +1,4 @@
-package net.dixq.unlimiteddiary.utils;
+package net.dixq.unlimiteddiary.common;
 
 import android.annotation.SuppressLint;
 import android.util.Log;

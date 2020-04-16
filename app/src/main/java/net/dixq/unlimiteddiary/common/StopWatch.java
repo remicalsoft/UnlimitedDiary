@@ -1,4 +1,4 @@
-package net.dixq.unlimiteddiary.utils;
+package net.dixq.unlimiteddiary.common;
 
 public class StopWatch {
     private long _startTime;

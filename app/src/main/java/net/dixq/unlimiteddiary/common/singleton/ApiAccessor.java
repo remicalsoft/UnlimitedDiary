@@ -1,4 +1,4 @@
-package net.dixq.unlimiteddiary.singleton;
+package net.dixq.unlimiteddiary.common.singleton;
 
 import com.google.api.services.drive.Drive;
 

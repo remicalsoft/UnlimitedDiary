@@ -7,9 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 import net.dixq.unlimiteddiary.R;
-import net.dixq.unlimiteddiary.utils.CalendarUtils;
-
-import org.w3c.dom.Text;
+import net.dixq.unlimiteddiary.common.CalendarUtils;
 
 import java.util.List;
 

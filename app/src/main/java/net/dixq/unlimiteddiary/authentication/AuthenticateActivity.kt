@@ -3,17 +3,10 @@ package net.dixq.unlimiteddiary.authentication
 import android.accounts.AccountManager
 import android.app.Activity
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.Handler
-import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.view.ContextThemeWrapper
-import androidx.core.view.marginLeft
 import com.google.android.material.textfield.TextInputEditText
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
@@ -22,12 +15,10 @@ import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import net.dixq.unlimiteddiary.R
 import net.dixq.unlimiteddiary.common.PrefUtils
-import net.dixq.unlimiteddiary.google_api.DriveHelper
-import net.dixq.unlimiteddiary.singleton.ApiAccessor
+import net.dixq.unlimiteddiary.common.google_api.DriveHelper
+import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.top.TopActivity
-import net.dixq.unlimiteddiary.uiparts.OkDialog
-import net.dixq.unlimiteddiary.utils.convertDpToPx
-import java.util.*
+import net.dixq.unlimiteddiary.common.OkDialog
 
 
 class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
@@ -108,7 +99,11 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View) {
         val edt = findViewById<TextInputEditText>(R.id.edt_body)
         if (edt.text.toString().isEmpty()) {
-            OkDialog(this, "ニックネームを入力してください。", null).show()
+            OkDialog(
+                this,
+                "ニックネームを入力してください。",
+                null
+            ).show()
             return
         }
         val color = _buttons.getColor()

@@ -7,19 +7,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import com.google.android.gms.tasks.Tasks
-import com.google.android.material.textfield.TextInputEditText
 import com.google.api.client.http.ByteArrayContent
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.R
 import net.dixq.unlimiteddiary.common.Define
-import net.dixq.unlimiteddiary.common.JsonParser
-import net.dixq.unlimiteddiary.singleton.ApiAccessor
+import net.dixq.unlimiteddiary.common.JsonUtils
+import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.top.DiaryData
-import net.dixq.unlimiteddiary.utils.Lg
+import net.dixq.unlimiteddiary.common.Lg
 import java.io.IOException
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -44,10 +41,10 @@ class PostingFragment : Fragment() {
         if(_diaryData!!.isNewPostData()) {
             // 新規策を作成して投稿
             _diaryData!!.setNowTime()
-            postNewFile(_diaryData!!.getFileName(), JsonParser.encodeJson(_diaryData!!).toByteArray())
+            postNewFile(_diaryData!!.getFileName(), JsonUtils.encode(_diaryData!!).toByteArray())
         } else {
             // 編集
-            post(_diaryData!!.getFileName(), _diaryData!!.fileId, JsonParser.encodeJson(_diaryData!!).toByteArray())
+            post(_diaryData!!.getFileName(), _diaryData!!.fileId, JsonUtils.encode(_diaryData!!).toByteArray())
         }
     }
 
@@ -87,7 +84,7 @@ class PostingFragment : Fragment() {
             .addOnSuccessListener {
                 Lg.d("投稿成功")
                 val intent = Intent();
-                intent.putExtra(TAG_JSON_DIARY, JsonParser.encodeJson(_diaryData))
+                intent.putExtra(TAG_JSON_DIARY, JsonUtils.encode(_diaryData))
                 _activity!!.setResult(RESULT_OK, intent)
                 _activity!!.finish()
             }

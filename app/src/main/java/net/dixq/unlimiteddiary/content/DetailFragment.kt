@@ -1,14 +1,14 @@
 package net.dixq.unlimiteddiary.content
 
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.*
 import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import net.dixq.unlimiteddiary.R
+import net.dixq.unlimiteddiary.common.OkCancelDialog
 import net.dixq.unlimiteddiary.top.DiaryData
 
 
@@ -60,6 +60,16 @@ class DetailFragment : Fragment() {
                 val fragment = PostFragment()
                 fragment.arguments = bundle
                 _activity!!.changeFragment(fragment)
+            }
+            R.id.menu_delete -> {
+                OkCancelDialog(_activity!!, "この日記を削除しますか？", DialogInterface.OnClickListener { a, b ->
+                    val bundle = Bundle()
+                    bundle.putString(TAG_JSON_DIARY, _jsonDiary)
+                    bundle.putString(TAG_DIARY_DELETE, "")
+                    val fragment = PostingFragment()
+                    fragment.arguments = bundle
+                    _activity!!.changeFragment(fragment)
+                }, null).show()
             }
         }
         return super.onOptionsItemSelected(item)

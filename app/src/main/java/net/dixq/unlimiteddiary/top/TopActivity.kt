@@ -18,10 +18,10 @@ import net.dixq.unlimiteddiary.R
 import net.dixq.unlimiteddiary.common.DbHelper
 import net.dixq.unlimiteddiary.common.JsonUtils
 import net.dixq.unlimiteddiary.common.Lg
-import net.dixq.unlimiteddiary.common.StopWatch
 import net.dixq.unlimiteddiary.common.google_api.DriveHelper
 import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.content.ContentActivity
+import net.dixq.unlimiteddiary.content.TAG_DIARY_DELETE
 import net.dixq.unlimiteddiary.content.TAG_JSON_DIARY
 import net.dixq.unlimiteddiary.content.TAG_NEW
 import java.io.IOException
@@ -30,10 +30,12 @@ import java.util.*
 
 class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     AdapterView.OnItemClickListener {
+
     private val _driveHelper = DriveHelper(ApiAccessor.getInstance())
     private val _handler = Handler()
     private var _list:LinkedList<DiaryData> = LinkedList<DiaryData>()
     private var _db:DbHelper? = null
+    private var _listAdapter:ItemAdapter? = null
 
     // ここにアクセスすると、無制限アップロード可能に。photos.google.com/settings
 
@@ -60,13 +62,22 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
             RESULT_OK-> {
                 val diaryData = DiaryData(false)
                 diaryData.setFromJson(data!!.getStringExtra(TAG_JSON_DIARY))
-                val index = getDiaryData(diaryData.getFileName())
-                if(index == -1){
+                val index = getDiaryDataIgnoreRevisioin(diaryData)
+                if (index == -1) {
                     //見つからなかったら新規投稿
                     insertTopOfList(diaryData)
+                    saveDiary(diaryData)
                 } else {
-                    //見つかったら差し替え
-                    _list[index] = diaryData
+                    if(data!!.getStringExtra(TAG_DIARY_DELETE)!=null) {
+                        //削除なら
+                        deleteDiary(_list[index])
+                        _list.removeAt(index)
+                    } else {
+                        //編集なら
+                        deleteDiary(_list[index])
+                        _list[index] = diaryData
+                        saveDiary(diaryData)
+                    }
                 }
                 val adapter = ItemAdapter(this@TopActivity, _list)
                 val listView = findViewById<ListView>(R.id.list)
@@ -75,10 +86,10 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         }
     }
 
-    private fun getDiaryData(fileName:String):Int {
+    private fun getDiaryDataIgnoreRevisioin(data:DiaryData):Int {
         var i=0
         while(i<_list.size){
-            if(_list[i].getFileName() == fileName){
+            if(data.equalsIgnoreRevision(_list[i].getFileName())){
                 return i
             }
             i++
@@ -121,37 +132,96 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
                 Lg.e("IOException:"+e.message)
             }
 
-            _list = createListData(fileList!!)
-            saveList(_list)
-            read()
-            _list = insertMonthLine(fileList!!, _list)
+            val updateList = LinkedList<File>()
+            val dbFileList = readFromDb()
+            for(file in fileList!!){
+                overrideFileId(file, dbFileList)
+                if(!existsInList(file.name, dbFileList)){
+                    // データベースと一致しない物は更新リストに入れて更新する
+                    updateList.add(file)
+                }
+            }
+            for(data in dbFileList){
+                if(!existsInList(data, fileList)){
+                    // データベースにあってサーバーにない物はデータベースから消す
+                    deleteDiary(data)
+                    dbFileList.remove(data)
+                }
+            }
 
-            val adapter = ItemAdapter(this@TopActivity, _list)
+            _list = dbFileList
+            sortList()
+            _list = insertMonthLine(_list)
+
+            _listAdapter = ItemAdapter(this@TopActivity, _list)
             _handler.post {
                 findViewById<ProgressBar>(R.id.progress).visibility = View.GONE;
-                findViewById<ListView>(R.id.list).adapter = adapter
+                findViewById<ListView>(R.id.list).adapter = _listAdapter
                 findViewById<SwipeRefreshLayout>(R.id.swipelayout).isRefreshing = false;
+            }
+            for(file in updateList){
+                val content = _driveHelper.getContent(file.id)
+                val diary = DiaryData(false)
+                diary.setFromJson(content)
+                diary.fileId = file.id
+                diary.isJustNowFound = true
+                removeIgnoreRevision(diary, _list) // Revision違いの同じ物があれば消す
+                deleteDiary(diary)
+                saveDiary(diary)
+                _list.add(diary)
+                _list = insertMonthLine(_list)
+                sortList()
+                _listAdapter!!.setList(_list)
+                _handler.post{ _listAdapter!!.notifyDataSetChanged() }
             }
 
         }.start()
     }
 
-    private fun createListData(fileList:LinkedList<File>):LinkedList<DiaryData>{
-        val sw = StopWatch();
-        val list = LinkedList<DiaryData>()
-        for (file in fileList) {
-            val content = _driveHelper.getContent(file.id)
-            val diary = DiaryData(false)
-            diary.setFromJson(content)
-            diary.fileId = file.id
-            list.add(diary)
-            Lg.e("sw2:"+sw.diff)
+    private fun overrideFileId(file:File, list: LinkedList<DiaryData>){
+        for(data in list){
+            if(data.getFileName() == file.name){
+                data.fileId = file.id
+                return
+            }
         }
-        return list
+    }
+
+    private fun sortList(){
+        _list.sortWith(Comparator {
+                a,b ->  b.getFileName().compareTo(a.getFileName())
+        })
+    }
+
+    private fun removeIgnoreRevision(data:DiaryData, list:LinkedList<DiaryData>){
+        for(d in list){
+            if(d.equalsIgnoreRevision(data.getFileName())){
+                list.remove(d)
+                return
+            }
+        }
+    }
+
+    private fun existsInList(filename:String, list:LinkedList<DiaryData>):Boolean {
+        for(data in list){
+            if(data.equals(filename)){
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun existsInList(data:DiaryData, list:LinkedList<File>):Boolean {
+        for(file in list){
+            if(data.equalsIgnoreRevision(file.name)){
+                return true
+            }
+        }
+        return false
     }
 
     // 日記データの中に月ラインを挿入する
-    private fun insertMonthLine(fileList:LinkedList<File>, list:LinkedList<DiaryData>):LinkedList<DiaryData>{
+    private fun insertMonthLine(list:LinkedList<DiaryData>):LinkedList<DiaryData>{
         if (list.size == 0) {
             return list
         }
@@ -190,17 +260,24 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         startActivityForResult(intent, REQUEST_CONTENT)
     }
 
-    private fun saveList(list:LinkedList<DiaryData>){
+    private fun saveDiary(data:DiaryData){
         val db = _db!!.writableDatabase
-        for(data in list) {
-            val cvalues = ContentValues()
-            cvalues.put(DbHelper.COLUMN_NAME_TITLE, data.getFileName())
-            cvalues.put(DbHelper.COLUMN_NAME_SUBTITLE, JsonUtils.encode(data))
-            db.insert(DbHelper.TABLE_NAME, null, cvalues)
-        }
+        val cvalues = ContentValues()
+        cvalues.put(DbHelper.COLUMN_NAME_TITLE, data.getFileName())
+        cvalues.put(DbHelper.COLUMN_NAME_SUBTITLE, JsonUtils.encode(data))
+        db.insert(DbHelper.TABLE_NAME, null, cvalues)
     }
 
-    private fun read() {
+    private fun deleteDiary(data:DiaryData){
+        val db: SQLiteDatabase = _db!!.readableDatabase
+        val name: String = data.getFileName()
+        val values = ContentValues()
+        values.put(DbHelper.COLUMN_NAME_TITLE, name)
+        db.delete(DbHelper.TABLE_NAME, DbHelper.COLUMN_NAME_TITLE+"=?", arrayOf(name))
+    }
+
+    private fun readFromDb():LinkedList<DiaryData> {
+        val list = LinkedList<DiaryData>()
         val db: SQLiteDatabase = _db!!.readableDatabase
         val cursor = db.query(
             DbHelper.TABLE_NAME,
@@ -213,11 +290,12 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         )
         cursor.moveToFirst()
         for (i in 0 until cursor.count) {
-            Lg.e("FileName: " + cursor.getString(0))
-            Lg.e("json: " + cursor.getString(1))
+            Lg.d("FileName: " + cursor.getString(0))
+            list.add(DiaryData(false, cursor.getString(1)))
             cursor.moveToNext()
         }
         cursor.close()
+        return list
     }
 
     companion object {

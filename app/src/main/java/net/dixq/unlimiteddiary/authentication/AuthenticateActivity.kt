@@ -1,12 +1,19 @@
 package net.dixq.unlimiteddiary.authentication
 
-import android.accounts.AccountManager
-import android.app.Activity
+import android.content.DialogInterface
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.Scope
 import com.google.android.material.textfield.TextInputEditText
 import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
@@ -14,11 +21,13 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import net.dixq.unlimiteddiary.R
+import net.dixq.unlimiteddiary.common.Lg
+import net.dixq.unlimiteddiary.common.OkDialog
 import net.dixq.unlimiteddiary.common.PrefUtils
 import net.dixq.unlimiteddiary.common.google_api.DriveHelper
 import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.top.TopActivity
-import net.dixq.unlimiteddiary.common.OkDialog
+import java.util.*
 
 
 class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
@@ -31,6 +40,13 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onCreate(b: Bundle?) {
         super.onCreate(b)
+        if(!isGoogleApiAvailable()){
+            OkDialog(this, "GooglePlay開発者サービスをインストールするか有効にしてください。",  DialogInterface.OnClickListener { _, _ ->
+                startGooglePlay()
+                finish()
+            }).show()
+            return
+        }
         if (PrefUtils.read(this, KEY_HANDLE_NAME).isEmpty()) {
             setContentView(R.layout.main_authentication)
             findViewById<View>(R.id.button_submit).setOnClickListener(this)
@@ -41,58 +57,66 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
         setupAuthentication()
     }
 
+    private fun isGoogleApiAvailable() :Boolean{
+        val availability = GoogleApiAvailability.getInstance()
+        return when(availability.isGooglePlayServicesAvailable(this)){
+            ConnectionResult.SUCCESS -> true
+            ConnectionResult.SERVICE_DISABLED,
+            ConnectionResult.SERVICE_MISSING,
+            ConnectionResult.SERVICE_UPDATING,
+            ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED,
+            ConnectionResult.SERVICE_INVALID,
+            ConnectionResult.SERVICE_DISABLED -> false
+            else -> false
+        }
+    }
+
+    private fun startGooglePlay() {
+        val googlePlayIntent = Intent(Intent.ACTION_VIEW);
+        googlePlayIntent.data = Uri.parse("market://details?id=com.google.android.gms")
+        startActivityForResult(googlePlayIntent, REQUEST_GOOGLE_PLAY);
+    }
+
     private fun setupAuthentication() {
-        val credential = GoogleAccountCredential.usingOAuth2(
-            this,
-            listOf(
-                DriveScopes.DRIVE,
-                "https://www.googleapis.com/auth/photoslibrary"
-            )
-        )
-        _credential = credential
-        val accountName =
-            PrefUtils.read(this, KEY_AUTH_ACOUNT_NAME)
-        if (accountName.isEmpty()) {
-            startActivityForResult(
-                credential.newChooseAccountIntent(),
-                REQUEST_ACCOUNT_PICKER
-            )
+        val account: GoogleSignInAccount? = GoogleSignIn.getLastSignedInAccount(this)
+        if(account==null) {
+            val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestScopes(Scope(DriveScopes.DRIVE))
+                .build()
+            var googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions)
+            startActivityForResult(googleSignInClient.signInIntent, REQUEST_ACCOUNT_PICKER)
         } else {
-            credential.setSelectedAccountName(accountName)
+            // ログインしていれば、認証スキップ
+            _credential = GoogleAccountCredential.usingOAuth2(
+                this, Collections.singleton(DriveScopes.DRIVE)
+            )
+            _credential!!.selectedAccount = account.account
             _isAuthenticationReady = true
             proceesNextStep()
         }
     }
 
-    override fun onActivityResult(
-        requestCode: Int,
-        resultCode: Int,
-        data: Intent?
-    ) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
-            REQUEST_ACCOUNT_PICKER -> if (resultCode == Activity.RESULT_OK && data != null) {
-                val accountName =
-                    data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
-                val accountType =
-                    data.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE)
-                PrefUtils.save(
-                    this,
-                    KEY_AUTH_ACOUNT_NAME,
-                    accountName
-                )
-                PrefUtils.save(
-                    this,
-                    KEY_AUTH_ACOUNT_TYPE,
-                    accountType
-                )
-                _credential!!.selectedAccountName = accountName
-                _isAuthenticationReady = true
-                proceesNextStep()
-            } else {
-                finish()
+            REQUEST_ACCOUNT_PICKER-> {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+                try {
+                    val account: GoogleSignInAccount? = task.getResult(ApiException::class.java)
+                    Lg.e("成功")
+                    _credential = GoogleAccountCredential.usingOAuth2(
+                        this, Collections.singleton(DriveScopes.DRIVE)
+                    )
+                    _credential!!.selectedAccount = account!!.account
+                    _isAuthenticationReady = true
+                    proceesNextStep()
+                } catch (e: Exception) {
+                    Lg.e("失敗")
+                }
             }
-            REQUEST_CODE_TOP -> finish()
+            else -> {
+                Lg.e("その他！");
+            }
         }
     }
 
@@ -144,8 +168,7 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
     companion object {
         const val REQUEST_CODE_TOP = 0
         const val REQUEST_ACCOUNT_PICKER = 1
-        private const val KEY_AUTH_ACOUNT_NAME = "KEY_AUTH_ACOUNT_NAME"
-        private const val KEY_AUTH_ACOUNT_TYPE = "KEY_AUTH_ACOUNT_TYPE"
+        const val REQUEST_GOOGLE_PLAY = 2
         public const val KEY_HANDLE_NAME = "KEY_HANDLE_NAME"
         public const val KEY_HANDLE_NAME_COLOR = "KEY_HANDLE_NAME_COLOR"
     }

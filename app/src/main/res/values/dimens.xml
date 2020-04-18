@@ -1,5 +1,4 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
-    <dimen name="post_image_thumb_width">90dp</dimen>
-    <dimen name="post_image_thumb_height">90dp</dimen>
+    <dimen name="row_sumb_wh_size">68dp</dimen>
 </resources>

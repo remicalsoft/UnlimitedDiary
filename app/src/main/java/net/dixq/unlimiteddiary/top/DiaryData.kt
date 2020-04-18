@@ -1,5 +1,6 @@
 package net.dixq.unlimiteddiary.top
 
+import android.content.Context
 import android.graphics.Color
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.dixq.unlimiteddiary.common.Lg
@@ -49,6 +50,11 @@ data class DiaryData(val isMonthLine: Boolean) {
     }
     fun getFileName(): String {
         return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.%d.txt", year, month, day, hour, min, sec, mill, revision)
+    }
+    fun getJpegFileName(context:Context, num:Int):String {
+        return context.getExternalFilesDir(null)!!.path+"/"+
+                String.format("%04d.%02d.%02d.%02d.%02d.%d.%d", year, month, day, hour, min, sec, mill)+
+                "."+num+".jpg"
     }
     fun proceedRevision(){
         revision++

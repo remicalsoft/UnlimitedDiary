@@ -20,10 +20,8 @@ import net.dixq.unlimiteddiary.common.JsonUtils
 import net.dixq.unlimiteddiary.common.Lg
 import net.dixq.unlimiteddiary.common.google_api.DriveHelper
 import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
-import net.dixq.unlimiteddiary.content.ContentActivity
-import net.dixq.unlimiteddiary.content.TAG_DIARY_DELETE
-import net.dixq.unlimiteddiary.content.TAG_JSON_DIARY
-import net.dixq.unlimiteddiary.content.TAG_NEW
+import net.dixq.unlimiteddiary.content.*
+import java.io.FileOutputStream
 import java.io.IOException
 import java.util.*
 
@@ -62,6 +60,13 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
             RESULT_OK-> {
                 val diaryData = DiaryData(false)
                 diaryData.setFromJson(data!!.getStringExtra(TAG_JSON_DIARY))
+                for(i in 0..3){
+                    val jpegData = data!!.getByteArrayExtra(TAG_POST_IMAGE+i) ?: break
+                    val path = diaryData.getJpegFileName(this, i)
+                    val fos = FileOutputStream(path)
+                    fos.write(jpegData)
+                    fos.close()
+                }
                 val index = getDiaryDataIgnoreRevisioin(diaryData)
                 if (index == -1) {
                     //見つからなかったら新規投稿
@@ -291,7 +296,8 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         cursor.moveToFirst()
         for (i in 0 until cursor.count) {
             Lg.d("FileName: " + cursor.getString(0))
-            list.add(DiaryData(false, cursor.getString(1)))
+            val data = DiaryData(false, cursor.getString(1))
+            list.add(data)
             cursor.moveToNext()
         }
         cursor.close()

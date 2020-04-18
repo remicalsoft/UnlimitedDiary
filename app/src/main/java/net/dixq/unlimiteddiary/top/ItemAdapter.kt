@@ -8,9 +8,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.ImageView
 import android.widget.TextView
 import net.dixq.unlimiteddiary.R
+import net.dixq.unlimiteddiary.common.BitmapUtils
 import net.dixq.unlimiteddiary.common.CalendarUtils
+import net.dixq.unlimiteddiary.utils.convertDpToPx
+import java.io.File
+
 
 class ItemAdapter(private val _context: Context, list: List<DiaryData>) : BaseAdapter() {
 
@@ -63,20 +68,36 @@ class ItemAdapter(private val _context: Context, list: List<DiaryData>) : BaseAd
                 (convertView.findViewById<View>(R.id.txt_title) as TextView).visibility =
                     View.VISIBLE
             }
-            if (_list[position].isJustNowFound) {
-                _list[position].isJustNowFound = false
-                val colorFrom = _context.getColor(R.color.md_deep_orange_600)
-                val colorTo = Color.TRANSPARENT
-                val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
-                colorAnimation.duration = 1000
-                val finalConvertView = convertView
-                colorAnimation.addUpdateListener { animator: ValueAnimator ->
-                    finalConvertView.setBackgroundColor(animator.animatedValue as Int)
-                }
-                colorAnimation.start()
-            }
+            updateJustNowFoundAnimation(convertView, _list[position])
+            updateThumbnail(convertView, _list[position])
         }
         return convertView
+    }
+
+    private fun updateJustNowFoundAnimation(convertView: View, diaryData:DiaryData){
+        if (diaryData.isJustNowFound) {
+            diaryData.isJustNowFound = false
+            val colorFrom = _context.getColor(R.color.md_deep_orange_600)
+            val colorTo = Color.TRANSPARENT
+            val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
+            colorAnimation.duration = 1000
+            val finalConvertView = convertView
+            colorAnimation.addUpdateListener { animator: ValueAnimator ->
+                finalConvertView.setBackgroundColor(animator.animatedValue as Int)
+            }
+            colorAnimation.start()
+        }
+
+    }
+
+    private fun updateThumbnail(convertView:View, diaryData: DiaryData){
+        val path = diaryData.getJpegFileName(_context, 0)
+        if (File(path).exists()) {
+            val imageView = convertView.findViewById<ImageView>(R.id.img_sumb)
+            imageView.visibility = View.VISIBLE
+            val bmp = BitmapUtils.cropSquareFrom(path, convertDpToPx(_context, _context.resources.getDimension(R.dimen.row_sumb_wh_size).toInt()))
+            imageView.setImageBitmap(bmp)
+        }
     }
 
     init {

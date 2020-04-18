@@ -149,6 +149,7 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
         Thread(Runnable {
             val driveHelper = DriveHelper(ApiAccessor.getInstance())
             ApiAccessor.getInstance().folderId = driveHelper.getFolderId()
+            ApiAccessor.getInstance().jpegFolderId = driveHelper.getJpegFolderId()
             _handler.post { startNextActivity() }
         }).start()
     }

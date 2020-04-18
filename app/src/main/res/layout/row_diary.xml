@@ -50,6 +50,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
+                android:layout_weight="1"
                 android:orientation="vertical">
 
             <TextView
@@ -74,8 +75,9 @@
 
         <ImageView
                 android:id="@+id/img_sumb"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_gravity="right"
+                android:layout_width="@dimen/row_sumb_wh_size"
+                android:layout_height="@dimen/row_sumb_wh_size" />
 
     </LinearLayout>
 

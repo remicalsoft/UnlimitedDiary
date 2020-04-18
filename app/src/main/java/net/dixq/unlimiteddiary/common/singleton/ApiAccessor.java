@@ -8,6 +8,7 @@ public class ApiAccessor {
 
     private String _photosApiAccessToken;
     private String _folderId;
+    private String _jpegFolderId;
 
     public void setDriveService(Drive service){
         _driveService = service;
@@ -28,6 +29,13 @@ public class ApiAccessor {
     }
     public String getFolderId(){
         return _folderId;
+    }
+
+    public void setJpegFolderId(String folderId){
+        _jpegFolderId = folderId;
+    }
+    public String getJpegFolderId(){
+        return _jpegFolderId;
     }
 
     private static final ApiAccessor _instance = new ApiAccessor();

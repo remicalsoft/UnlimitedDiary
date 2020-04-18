@@ -3,11 +3,11 @@ package net.dixq.unlimiteddiary.common.google_api
 import com.google.android.gms.tasks.Tasks
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.common.Define
-import net.dixq.unlimiteddiary.common.exception.FatalErrorException
-import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
 import net.dixq.unlimiteddiary.common.Lg
 import net.dixq.unlimiteddiary.common.StopWatch
 import net.dixq.unlimiteddiary.common.StreamUtils
+import net.dixq.unlimiteddiary.common.exception.FatalErrorException
+import net.dixq.unlimiteddiary.common.singleton.ApiAccessor
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.Callable
@@ -23,7 +23,22 @@ class DriveHelper(private val _accessor: ApiAccessor) {
             val files = request.execute()
             list.addAll(files.files)
             request.pageToken = files.nextPageToken
-        } while (request.pageToken != null && request.pageToken.length > 0)
+        } while (request.pageToken != null && request.pageToken.isNotEmpty())
+        if (list.size != 1) {
+            throw FatalErrorException("UnlimitedDiaryのフォルダが見つからないか、2つ以上あります")
+        }
+        return list[0].id
+    }
+
+    fun getJpegFolderId():String {
+        val list = ArrayList<File>()
+        val request = _accessor.driveService.files().list()
+        request.q = "mimeType = 'application/vnd.google-apps.folder' and name = '" + Define.FOLDER_JPEG_NAME + "'"
+        do {
+            val files = request.execute()
+            list.addAll(files.files)
+            request.pageToken = files.nextPageToken
+        } while (request.pageToken != null && request.pageToken.isNotEmpty())
         if (list.size != 1) {
             throw FatalErrorException("UnlimitedDiaryのフォルダが見つからないか、2つ以上あります")
         }

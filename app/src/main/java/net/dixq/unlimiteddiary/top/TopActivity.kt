@@ -25,7 +25,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.util.*
 
-
 class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     AdapterView.OnItemClickListener {
 
@@ -62,10 +61,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
                 diaryData.setFromJson(data!!.getStringExtra(TAG_JSON_DIARY))
                 for(i in 0..3){
                     val jpegData = data!!.getByteArrayExtra(TAG_POST_IMAGE+i) ?: break
-                    val path = diaryData.getJpegFileName(this, i)
-                    val fos = FileOutputStream(path)
-                    fos.write(jpegData)
-                    fos.close()
+                    writeJpeg(diaryData.getJpegFilePath(this, i), jpegData)
                 }
                 val index = getDiaryDataIgnoreRevisioin(diaryData)
                 if (index == -1) {
@@ -91,10 +87,16 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         }
     }
 
+    private fun writeJpeg(path:String, jpegData: ByteArray){
+        val fos = FileOutputStream(path)
+        fos.write(jpegData)
+        fos.close()
+    }
+
     private fun getDiaryDataIgnoreRevisioin(data:DiaryData):Int {
         var i=0
         while(i<_list.size){
-            if(data.equalsIgnoreRevision(_list[i].getFileName())){
+            if(data.equalsOnlyDate(_list[i].getFileName())){
                 return i
             }
             i++
@@ -125,9 +127,9 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         // 非UIスレッドで呼び出す
         // （AsyncTask等でAPI呼び出し用の基底クラスをつくって認証が必要な場合の処理を実施したほうが良い）
         Thread {
-            var fileList: LinkedList<File>? = null
+            var serverDiaryList: LinkedList<File>? = null
             try {
-                fileList = _driveHelper.allFile
+                serverDiaryList = _driveHelper.allFile
             } catch (e: UserRecoverableAuthIOException) {
                 // 認証が必要な場合に発生するException。これが発生したら認証のためのIntent発行を行い、認証後、DriveAPIを再呼び出しする
                 _handler.post { startActivityForResult(e.intent, REQUEST_AUTHORIZATION) }
@@ -139,15 +141,18 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
             val updateList = LinkedList<File>()
             val dbFileList = readFromDb()
-            for(file in fileList!!){
+            for(file in serverDiaryList!!){
                 overrideFileId(file, dbFileList)
                 if(!existsInList(file.name, dbFileList)){
                     // データベースと一致しない物は更新リストに入れて更新する
+                    Lg.e("データベースと一致しないので更新リストにいれる : "+file.name)
                     updateList.add(file)
+                } else {
+                    Lg.e("データベースと一致したので更新リストにいれない : "+file.name)
                 }
             }
             for(data in dbFileList){
-                if(!existsInList(data, fileList)){
+                if(!existsInList(data, serverDiaryList)){
                     // データベースにあってサーバーにない物はデータベースから消す
                     deleteDiary(data)
                     dbFileList.remove(data)
@@ -156,6 +161,15 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
             _list = dbFileList
             sortList()
+            val deficientJpegFiles = getDeficientJpegFiles(_list)
+            if(deficientJpegFiles.size==0){
+                Lg.e("不足しているJpegファイルはありません。");
+            } else {
+                Lg.e("不足しているJpegファイルは以下の通り。");
+                for(name in deficientJpegFiles){
+                    Lg.e("不足ファイル：$name");
+                }
+            }
             _list = insertMonthLine(_list)
 
             _listAdapter = ItemAdapter(this@TopActivity, _list)
@@ -164,6 +178,8 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
                 findViewById<ListView>(R.id.list).adapter = _listAdapter
                 findViewById<SwipeRefreshLayout>(R.id.swipelayout).isRefreshing = false;
             }
+
+            //本文の更新
             for(file in updateList){
                 val content = _driveHelper.getContent(file.id)
                 val diary = DiaryData(false)
@@ -180,7 +196,66 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
                 _handler.post{ _listAdapter!!.notifyDataSetChanged() }
             }
 
+            //他者新規投稿分サムネイルのダウンロード
+            val jpegFileListOnServer = _driveHelper.getAllFile(_driveHelper.getJpegFolderId())
+            for(file in updateList){
+                if(!DiaryData.existsJpegFile(file.name)){
+                    Lg.e("JPEGファイルが無いので処理しない")
+                    continue
+                }
+                val diary = findDiary(file.name, _list)
+                val jpegFileName = diary.getMinJpegFileName()
+                downloadAndNotify(jpegFileName!!, jpegFileListOnServer)
+            }
+            //他者編集更新分サムネイルのダウンロード
+            for(defFile in deficientJpegFiles) {
+                downloadAndNotify(defFile, jpegFileListOnServer)
+            }
+
         }.start()
+    }
+
+    private fun downloadAndNotify(jpegFileName:String, jpegFileListOnServer:LinkedList<File>){
+        Lg.e("これからファイルを受信します : $jpegFileName")
+        val fileId = findFileId(jpegFileName, jpegFileListOnServer)
+        val jpegData = _driveHelper.getJpegFile(fileId)
+        writeJpeg(getExternalFilesDir(null)!!.path + "/" + jpegFileName, jpegData)
+        Lg.e("ファイルを受信したので保存。Listを更新 : $jpegFileName")
+        _handler.post{ _listAdapter!!.notifyDataSetChanged() }
+    }
+
+    private fun findFileId(filename:String, list:LinkedList<File>): String {
+        for(file in list){
+            if(filename == file.name){
+                return file.id
+            }
+        }
+        throw RuntimeException("サーバーに対象のファイルがありません。 : $filename");
+    }
+
+    private fun findDiary(filename:String, list:LinkedList<DiaryData>): DiaryData {
+        for(diary in list){
+            if(diary.getFileName() == filename){
+                return diary
+            }
+        }
+        throw RuntimeException("DiaryDataが見つからない : $filename")
+    }
+
+    private fun getDeficientJpegFiles(list:LinkedList<DiaryData>):LinkedList<String> {
+        val defList = LinkedList<String>()
+        for(diary in list){
+            val min = diary.getMinJpegFileIndex()
+            if(min == -1){
+                continue
+            }
+            val path = diary.getJpegFilePath(this, min)
+            val file = java.io.File(path)
+            if(!file.exists()){
+                defList.add(diary.getJpegFileName(min))
+            }
+        }
+        return defList
     }
 
     private fun overrideFileId(file:File, list: LinkedList<DiaryData>){
@@ -200,7 +275,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
     private fun removeIgnoreRevision(data:DiaryData, list:LinkedList<DiaryData>){
         for(d in list){
-            if(d.equalsIgnoreRevision(data.getFileName())){
+            if(d.equalsOnlyDate(data.getFileName())){
                 list.remove(d)
                 return
             }
@@ -218,7 +293,7 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
 
     private fun existsInList(data:DiaryData, list:LinkedList<File>):Boolean {
         for(file in list){
-            if(data.equalsIgnoreRevision(file.name)){
+            if(data.equalsOnlyDate(file.name)){
                 return true
             }
         }

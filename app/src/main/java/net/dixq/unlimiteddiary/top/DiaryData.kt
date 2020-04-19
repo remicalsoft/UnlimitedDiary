@@ -23,6 +23,7 @@ data class DiaryData(val isMonthLine: Boolean) {
     var color: String = Color.WHITE.toString()
     var fileId: String = "-1"
     var isJustNowFound = false
+    var jpegFile:Long = 0 // ファイルの存在がbitフラグになっている。1つ目のファイルがあれば0b0001,それに加えて2つ目のファイルがあれば0b0011、1つ目のファイルが消えたら0b0010
 
     constructor(isMonthLine: Boolean, year:Int, month:Int) : this(isMonthLine) {
         this.year = year
@@ -49,12 +50,46 @@ data class DiaryData(val isMonthLine: Boolean) {
         mill = (System.currentTimeMillis() % 1000).toInt()
     }
     fun getFileName(): String {
-        return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.%d.txt", year, month, day, hour, min, sec, mill, revision)
+        return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d.%d.%d.txt", year, month, day, hour, min, sec, mill, revision, jpegFile)
     }
-    fun getJpegFileName(context:Context, num:Int):String {
-        return context.getExternalFilesDir(null)!!.path+"/"+
-                String.format("%04d.%02d.%02d.%02d.%02d.%d.%d", year, month, day, hour, min, sec, mill)+
-                "."+num+".jpg"
+    fun getJpegFileName(num:Int):String {
+        return String.format("%04d.%02d.%02d.%02d.%02d.%d.%d", year, month, day, hour, min, sec, mill)+ "."+num+".jpg"
+    }
+    fun getJpegFilePath(context:Context, num:Int):String {
+        return context.getExternalFilesDir(null)!!.path + "/" + getJpegFileName(num)
+    }
+    fun getJpegFileNames():LinkedList<String> {
+        val list = LinkedList<String>()
+        for(i in 0..63){
+            if(jpegFile and (1.toLong() shl i) != 0.toLong()){
+                list.add(getJpegFileName(i))
+            }
+        }
+        return list
+    }
+    fun getJpegFilePaths(context:Context):LinkedList<String> {
+        val list = LinkedList<String>()
+        for(i in 0..63){
+            if(jpegFile and (1.toLong() shl i) != 0.toLong()){
+                list.add(getJpegFilePath(context, i))
+            }
+        }
+        return list
+    }
+    fun getMinJpegFileName():String? {
+        val min = getMinJpegFileIndex()
+        if(min==-1){
+            return null
+        }
+        return  getJpegFileName(min)
+    }
+    fun getMinJpegFileIndex():Int {
+        for(i in 0..63){
+            if(jpegFile and (1.toLong() shl i) != 0.toLong()){
+                return i
+            }
+        }
+        return -1
     }
     fun proceedRevision(){
         revision++
@@ -77,6 +112,7 @@ data class DiaryData(val isMonthLine: Boolean) {
             author = node.get("author").asText()
             color = node.get("color").asText()
             fileId = node.get("fileId").asText()
+            jpegFile = node.get("jpegFile").asLong()
 
         } catch (e:Exception) {
             Lg.e("json exception : "+e.message)
@@ -95,12 +131,13 @@ data class DiaryData(val isMonthLine: Boolean) {
         val sec = strs[5].toInt()
         val mill = strs[6].toInt()
         val rev = strs[7].toInt()
-        if(this.year == year && this.month == month && this.day == day && this.hour == hour && this.min == min && this.sec == sec && this.mill == mill && this.revision == rev){
+        val jpg = strs[8].toLong()
+        if(this.year == year && this.month == month && this.day == day && this.hour == hour && this.min == min && this.sec == sec && this.mill == mill && this.revision == rev && this.jpegFile == jpg){
             return true
         }
         return false
     }
-    fun equalsIgnoreRevision(fileName:String):Boolean {
+    fun equalsOnlyDate(fileName:String):Boolean {
         val strs = fileName.split(".")
         val year = strs[0].toInt()
         val month = strs[1].toInt()
@@ -113,5 +150,24 @@ data class DiaryData(val isMonthLine: Boolean) {
             return true
         }
         return false
+    }
+    fun addJpegFile(){
+        var max = 0
+        for(i in 0..63){
+            if(jpegFile and (1.toLong() shl i) != 0.toLong()){
+                max = i
+            }
+        }
+        jpegFile = jpegFile or (1.toLong() shl max)
+    }
+
+    companion object {
+        fun existsJpegFile(fileName: String): Boolean {
+            val strs = fileName.split(".")
+            if (strs[8].toLong() != 0.toLong()) {
+                return true
+            }
+            return false
+        }
     }
 }

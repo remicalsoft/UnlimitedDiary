@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import net.dixq.unlimiteddiary.R
 import net.dixq.unlimiteddiary.common.BitmapUtils
@@ -91,12 +92,19 @@ class ItemAdapter(private val _context: Context, list: List<DiaryData>) : BaseAd
     }
 
     private fun updateThumbnail(convertView:View, diaryData: DiaryData){
-        val path = diaryData.getJpegFileName(_context, 0)
+        val min = diaryData.getMinJpegFileIndex()
+        if(min == -1){
+            return
+        }
+        val path = diaryData.getJpegFilePath(_context, min)
         if (File(path).exists()) {
+            convertView.findViewById<ProgressBar>(R.id.progress_thumb).visibility = View.GONE
             val imageView = convertView.findViewById<ImageView>(R.id.img_sumb)
             imageView.visibility = View.VISIBLE
             val bmp = BitmapUtils.cropSquareFrom(path, convertDpToPx(_context, _context.resources.getDimension(R.dimen.row_sumb_wh_size).toInt()))
             imageView.setImageBitmap(bmp)
+        } else {
+            convertView.findViewById<ProgressBar>(R.id.progress_thumb).visibility = View.VISIBLE
         }
     }
 

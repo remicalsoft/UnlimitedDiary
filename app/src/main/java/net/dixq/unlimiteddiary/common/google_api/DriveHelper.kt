@@ -80,6 +80,12 @@ class DriveHelper(private val _accessor: ApiAccessor) {
         return StreamUtils.getText(im)
     }
 
+    @Throws(IOException::class)
+    fun getJpegFile(fileId: String?): ByteArray {
+        val im = _accessor.driveService.files()[fileId].executeMediaAsInputStream()
+        return StreamUtils.readAll(im)
+    }
+
     fun delete(deleteFileId:String){
         Tasks.call(Executors.newSingleThreadExecutor(), Callable<Void>{
             _accessor.driveService.files().delete(deleteFileId).execute()

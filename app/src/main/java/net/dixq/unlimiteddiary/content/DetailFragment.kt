@@ -56,7 +56,7 @@ class DetailFragment : Fragment() {
             }
             val idarray = arrayListOf<Int>(R.id.img00,R.id.img01,R.id.img02,R.id.img03)
             for(i in 0..3){
-                val filename = _diaryData!!.getJpegFileName(this.context!!, i)
+                val filename = _diaryData!!.getJpegFilePath(this.context!!, i)
                 val bmp = BitmapFactory.decodeFile(filename) ?: break
                 val imgView = view.findViewById<ImageButton>(idarray[i])
                 val size = PostFragment.getFitSize(_activity!!, _rootView!!, bmp)

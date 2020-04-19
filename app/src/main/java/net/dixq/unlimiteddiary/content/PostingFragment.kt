@@ -50,9 +50,12 @@ class PostingFragment : Fragment() {
         }
 
         if(_diaryData!!.isNewPostData()) {
-            // 新規策を作成して投稿
+            // 新規ファイルを作成して投稿
             Notification.post(this.context!!)
             _diaryData!!.setNowTime()
+            for(i in 0 until _jpegList.size){
+                _diaryData!!.addJpegFile()
+            }
             postNewFile(_diaryData!!.getFileName())
         } else if(arguments!!.getString(TAG_DIARY_DELETE)!=null) {
             delete(_diaryData!!.fileId)
@@ -171,7 +174,7 @@ class PostingFragment : Fragment() {
     private fun postJpegIfNeed(num:Int){
         if(_jpegList.size>num) {
             Lg.e("post Jpeg");
-            postJpeg(_diaryData!!.getJpegFileName(_context!!, num), _jpegList[num], num)
+            postJpeg(_diaryData!!.getJpegFileName(num), _jpegList[num], num)
         } else {
             Lg.e("cancel notification");
             Notification.cancel(_context!!)

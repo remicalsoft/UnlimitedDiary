@@ -73,11 +73,21 @@
                     android:textSize="16sp" />
         </LinearLayout>
 
-        <ImageView
-                android:id="@+id/img_sumb"
-                android:layout_gravity="right"
+        <FrameLayout
                 android:layout_width="@dimen/row_sumb_wh_size"
-                android:layout_height="@dimen/row_sumb_wh_size" />
+                android:layout_height="@dimen/row_sumb_wh_size"
+                android:layout_gravity="right">
+            <ImageView
+                    android:id="@+id/img_sumb"
+                    android:layout_width="@dimen/row_sumb_wh_size"
+                    android:layout_height="@dimen/row_sumb_wh_size" />
+            <ProgressBar
+                    android:id="@+id/progress_thumb"
+                    android:visibility="gone"
+                    android:layout_gravity="center"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp" />
+        </FrameLayout>
 
     </LinearLayout>
 

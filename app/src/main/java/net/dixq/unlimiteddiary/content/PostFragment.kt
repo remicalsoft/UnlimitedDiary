@@ -85,9 +85,13 @@ class PostFragment : Fragment(), View.OnClickListener {
                 // 既にロードしている場合はもうしない
                 return@OnLayoutChangeListener
             }
+            if(_diaryData==null){
+                // 新規投稿
+                return@OnLayoutChangeListener
+            }
             val idarray = arrayListOf<Int>(R.id.img00, R.id.img01, R.id.img02, R.id.img03)
             for (i in 0..3) {
-                val filename = _diaryData!!.getJpegFileName(this.context!!, i)
+                val filename = _diaryData!!.getJpegFilePath(this.context!!, i)
                 val bmp = BitmapFactory.decodeFile(filename) ?: break
                 _bitmapList.add(bmp)
                 val imgView = view.findViewById<ImageButton>(idarray[i])

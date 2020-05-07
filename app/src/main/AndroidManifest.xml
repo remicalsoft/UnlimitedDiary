@@ -40,6 +40,11 @@
                 android:windowSoftInputMode="stateAlwaysVisible"
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
+        <activity
+                android:name=".child.AddChildActivity"
+                android:label="@string/app_name"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
     </application>
 
 </manifest>

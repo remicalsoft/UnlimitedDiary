@@ -135,8 +135,8 @@ class AuthenticateActivity : AppCompatActivity(), View.OnClickListener {
             OkDialog(this, "カラーを選択してください。", null).show()
             return
         }
-        PrefUtils.save(this, KEY_HANDLE_NAME, edt.text.toString())
-        PrefUtils.save(this, KEY_HANDLE_NAME_COLOR, color.toString())
+        PrefUtils.write(this, KEY_HANDLE_NAME, edt.text.toString())
+        PrefUtils.write(this, KEY_HANDLE_NAME_COLOR, color.toString())
         _isNameReady = true
         proceesNextStep()
     }

@@ -4,7 +4,7 @@ import android.content.Context;
 
 public class PrefUtils {
     private static final String TAG = "TAG_UNLIMITEDDIARY_PREFERENCE";
-    static public void save(Context context, String key, String data) {
+    static public void write(Context context, String key, String data) {
         context.getSharedPreferences(TAG, Context.MODE_PRIVATE)
                 .edit()
                 .putString(key, data)

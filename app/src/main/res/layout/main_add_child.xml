@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:elevation="8dp"
+            >
+        <Button
+            android:id="@+id/btn_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="80dp"
+            android:layout_marginRight="16dp"
+            android:text="決定"
+            style="@style/Widget.MaterialComponents.Button"
+            android:layout_marginBottom="16dp"
+            android:textSize="14dp"
+            android:textColor="#DEFFFFFF"
+            android:layout_gravity="center|right"/>
+
+    </androidx.appcompat.widget.Toolbar>
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_margin="16dp">
+
+    <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/textField_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="子供の名前">
+
+        <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFF"
+                android:id="@+id/edt_name"
+                />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+        android:text="子供の生年月日を選択してください。"
+        android:textSize="18sp"/>
+
+    <Button
+            android:id="@+id/btn_select_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="生年月日を選択"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            style="?attr/materialButtonOutlinedStyle" />
+
+    <TextView
+            android:id="@+id/txt_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="18sp"/>
+
+</LinearLayout>
+</LinearLayout>

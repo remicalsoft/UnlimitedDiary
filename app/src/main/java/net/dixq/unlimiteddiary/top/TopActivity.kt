@@ -5,16 +5,20 @@ import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import android.os.Handler
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ListView
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIOException
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.model.File
 import net.dixq.unlimiteddiary.R
+import net.dixq.unlimiteddiary.child.AddChildActivity
 import net.dixq.unlimiteddiary.common.DbHelper
 import net.dixq.unlimiteddiary.common.JsonUtils
 import net.dixq.unlimiteddiary.common.Lg
@@ -39,6 +43,10 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_top)
+
+        val toolbar = findViewById<Toolbar>(R.id.toolbar);
+        setSupportActionBar(toolbar)
+
         _db = DbHelper(this.applicationContext)
         findViewById<SwipeRefreshLayout>(R.id.swipelayout).setOnRefreshListener(this);
         findViewById<ListView>(R.id.list).onItemClickListener = this
@@ -377,6 +385,21 @@ class TopActivity : AppCompatActivity(), SwipeRefreshLayout.OnRefreshListener,
         }
         cursor.close()
         return list
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.top, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean{
+        when (item.itemId) {
+            R.id.menu_add_child -> {
+                val intent = Intent(this, AddChildActivity::class.java)
+                startActivity(intent)
+            }
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     companion object {
